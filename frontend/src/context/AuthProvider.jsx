@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   // Manage the current JWT access token and the decoded user profile
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const REFRESH_INTERVAL = 15 * 60 * 1000; // 15 minutes
 
 // Login
@@ -69,6 +70,21 @@ export function AuthProvider({ children }) {
     }
   }, [accessToken, logout]);
 
+  // Silently restore session on page load using the HttpOnly refresh cookie
+  useEffect(() => {
+    api.post("/auth/refresh")
+      .then(res => {
+        const token = res.data.accessToken;
+        setAccessToken(token);
+        api.defaults.headers.Authorization = `Bearer ${token}`;
+        setUser(jwtDecode(token));
+      })
+      .catch(() => {
+        // No valid refresh cookie — user must log in
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   // Refresh token every 15 min
   useEffect(() => {
     // Setup a recurring timer to rotate the access token before expiration
@@ -117,6 +133,7 @@ export function AuthProvider({ children }) {
 
     setAccessToken(fakeToken);
     setUser(fakeUser);
+    setLoading(false);
   };
 
   return (
@@ -125,6 +142,7 @@ export function AuthProvider({ children }) {
       value={{
         user,
         accessToken,
+        loading,
         login,
         logout,
         mockAdminLogin, //TEMPORARY

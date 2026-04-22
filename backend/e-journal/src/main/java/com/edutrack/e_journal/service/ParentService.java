@@ -6,12 +6,14 @@ import com.edutrack.e_journal.entity.RoleEnum;
 import com.edutrack.e_journal.entity.School;
 import com.edutrack.e_journal.entity.Student;
 import com.edutrack.e_journal.entity.User;
+import com.edutrack.e_journal.repository.RoleRepository;
 import com.edutrack.e_journal.repository.SchoolRepository;
 import com.edutrack.e_journal.repository.StudentRepository;
 import com.edutrack.e_journal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -28,6 +30,8 @@ public class ParentService {
     private final StudentRepository studentRepository;
     private final SchoolRepository  schoolRepository;
     private final SchoolService     schoolService;
+    private final RoleRepository    roleRepository;
+    private final PasswordEncoder   passwordEncoder;
 
     public List<ParentDto> getBySchool(Long schoolId, UserDetails principal) {
         // Verify the authenticated headmaster has authority over the requested school
@@ -168,5 +172,30 @@ public class ParentService {
         // Construct the final DTO containing parent details and the filtered student list
         return new ParentDto(parent.getId(), parent.getFirstName(), parent.getLastName(),
                 parent.getEmail(), children);
+    }
+
+    public ParentDto create(String firstName, String lastName, String email, Long schoolId, UserDetails principal) {
+        // 1. Verify the authenticated headmaster has authority over this school
+        schoolService.checkHeadmasterSchoolAccess(principal, schoolId);
+
+        // 2. Check if a user with this email already exists
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is already in use");
+        }
+
+        // 3. Create the new User entity
+        User newParent = new User();
+        newParent.setFirstName(firstName);
+        newParent.setLastName(lastName);
+        newParent.setEmail(email);
+
+        newParent.setPasswordHash(passwordEncoder.encode("password"));
+        newParent.setRole(roleRepository.findByName(RoleEnum.PARENT).orElseThrow());
+
+        // 4. Save to the database
+        User savedParent = userRepository.save(newParent);
+
+        // 5. Return the mapped DTO
+        return toDto(savedParent, schoolId);
     }
 }

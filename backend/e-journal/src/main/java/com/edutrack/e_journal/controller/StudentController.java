@@ -32,6 +32,7 @@ public class StudentController {
     @PreAuthorize("hasRole('HEADMASTER')")
     public List<UserDto> getAvailable() {
         // Retrieve the list of student users who are not yet assigned to any school class
+        //System.out.println(studentService.getAvailable());
         return studentService.getAvailable();
     }
 
