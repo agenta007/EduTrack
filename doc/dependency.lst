@@ -1,0 +1,32 @@
+# EduTrack e-journal dependencies (pom.xml)
+
+  ## Spring Boot starters
+  org.springframework.boot:spring-boot-starter-data-jpa   (managed by parent 3.5.0)
+  org.springframework.boot:spring-boot-starter-validation   (managed by parent 3.5.0)
+  org.springframework.boot:spring-boot-starter-web          (managed by parent 3.5.0)
+  org.springframework.boot:spring-boot-starter-security      (managed by parent 3.5.0)
+  org.springframework.boot:spring-boot-starter-actuator      (managed by parent 3.5.0)
+  org.springframework.boot:spring-boot-starter-test          (managed by parent 3.5.0) [test]
+
+  ## Database driver
+  org.postgresql:postgresql                                  [runtime]
+
+  ## JWT (jsonwebtoken)
+  io.jsonwebtoken:jjwt-api      version: 0.12.5
+  io.jsonwebtoken:jjwt-impl     version: 0.12.5       [runtime]
+  io.jsonwebtoken:jjwt-jackson  version: 0.12.5       [runtime]
+
+  ## API documentation
+  org.springdoc:springdoc-openapi-starter-webmvc-ui version: 2.8.6
+
+  ## Utilities
+  org.projectlombok:lombok version: 1.18.38     (optional)
+
+  ## Build plugins
+  org.apache.maven.plugins:maven-compiler-plugin   version: 3.14.0
+  org.springframework.boot:spring-boot-maven-plugin  (managed by parent)
+
+  Total direct dependencies: 8 (5 Spring Boot starters + postgresql driver + 3 JWT artifacts + springdoc-openapi + lombok).
+
+  The parent spring-boot-starter-parent:3.5.0 manages versions for the spring-boot-starter-* dependencies, so you only had to pin version explicitly for postgresql, jjwt,
+  springdoc, and lombok.
