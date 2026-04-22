@@ -176,7 +176,7 @@ function TeacherStatistics() {
     );
   }, [teacherSubjectsByClass, gradesByClass, classNames, subjectNames]);
 
-  const title = isOwnStats ? 'My Statistics' : `Teacher Statistics`;
+  const title = isOwnStats ? t('stats.mystatistics')  : t('users.schoolName') ;
 
   return (
     <Layout>

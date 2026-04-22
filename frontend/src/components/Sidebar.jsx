@@ -113,6 +113,7 @@ const Sidebar = () => {
             {key: "home", label: t('nav.home'), icon: <HomeIcon />, to: "/"},
             {key: "mySchool", label: t('nav.mySchool'), icon: <SchoolIcon />, to: "/teacher/school"},
             {key: "schedule", label: t('nav.schedule'), icon: <ScheduleIcon />, to: "/teacher/teacherSchedule/:teacherId"},
+            {key: "statistics", label: t('nav.teacherStatistics'), icon: <StatsIcon />, to: "/statistics/teacher/me"},
             {key: "grades", label: t('nav.grades'), icon: <Grade />, to: "/select/class/grades"},
             {key: "absences", label: t('nav.absences'), icon: <AbsenceIcon />, to: "/select/class/absences"},
             {key: "complaints", label: t('nav.complaints'), icon: <ComplaintIcon />, to: "/select/class/complaints"},
