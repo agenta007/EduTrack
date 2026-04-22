@@ -234,7 +234,7 @@ function ManageUsers() {
                     { id: 'lastName',  label: t('users.lastName') },
                     { id: 'email',     label: t('users.email') },
                     { id: 'role',      label: t('users.role') },
-                    { id: 'schoolName',label: t('users.schoolName') },
+                    { id: 'schoolName',      label: t('users.schoolName') },
                   ].map(col => (
                     <TableCell key={col.id} sortDirection={sortBy === col.id ? sortDir : false}>
                       <TableSortLabel
@@ -252,7 +252,7 @@ function ManageUsers() {
               <TableBody>
                 {filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">{t('users.noUsers')}</TableCell>
+                    <TableCell colSpan={8} align="center">{t('users.noUsers')}</TableCell>
                   </TableRow>
                 ) : (
                   filtered.map(user => (
@@ -267,6 +267,7 @@ function ManageUsers() {
                       <TableCell>
                         <Chip label={t(`roles.${user.role}`)} color={ROLE_COLORS[user.role] || 'default'} size="small" />
                       </TableCell>
+                      <TableCell>{user.schoolName ?? '—'}</TableCell>
                       <TableCell align="center">
                         <IconButton onClick={e => { e.stopPropagation(); setConfirmId(user.id); setConfirmName(`${user.firstName} ${user.lastName}`); }}>
                           <DeleteIcon sx={{ color: 'red' }} />
