@@ -54,6 +54,9 @@ function HeadmasterSchool() {
   const [infoError,   setInfoError]   = useState(null);
   const [infoSuccess, setInfoSuccess] = useState(false);
 
+  // Classes
+  const [classes, setClasses] = useState([]);
+
   // Student limit
   const [studentLimit,        setStudentLimit]        = useState('');
   const [limitSaving,         setLimitSaving]         = useState(false);
@@ -70,15 +73,17 @@ function HeadmasterSchool() {
           api.get(`/api/schools/${sid}`),
           api.get(`/api/schools/${sid}/schedule`),
           api.get(`/api/schools/${sid}/term-config`),
+          api.get(`/api/classes/school/${sid}`),
         ]);
       })
-      .then(([schoolRes, schedRes, termRes]) => {
+      .then(([schoolRes, schedRes, termRes, classesRes]) => {
         setSchool(schoolRes.data);
         setEditName(schoolRes.data.name || '');
         setEditAddress(schoolRes.data.address || '');
         setEntries(schedRes.data);
         setTermConfig(termRes.data);
         setStudentLimit(schoolRes.data.studentLimit != null ? String(schoolRes.data.studentLimit) : '');
+        setClasses(classesRes.data);
       })
       .catch(() => setError(t('schools.fetchError')))
       .finally(() => setLoading(false));
@@ -227,6 +232,37 @@ function HeadmasterSchool() {
             {t('common.save')}
           </Button>
         </Box>
+
+        {/* ── Classes ─────────────────────────────────────────────────────── */}
+        <Divider sx={{ my: 2 }} />
+        <Typography variant="h6" sx={{ mb: 1.5 }}>{t('schools.classes')}</Typography>
+        {classes.length === 0 ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {t('schools.noClasses')}
+          </Typography>
+        ) : (
+          <TableContainer component={Paper} sx={{ mb: 1, maxWidth: 480 }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('stats.class')}</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>{t('schools.schoolYear')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {classes
+                  .slice()
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(cls => (
+                    <TableRow key={cls.id} hover>
+                      <TableCell>{cls.name}</TableCell>
+                      <TableCell>{cls.schoolYear ?? '—'}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         {/* ── Class Weekly Timetable ───────────────────────────────────────── */}
         <Divider sx={{ my: 2 }} />
