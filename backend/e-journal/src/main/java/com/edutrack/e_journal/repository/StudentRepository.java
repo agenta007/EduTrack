@@ -16,4 +16,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findAllByParent_Id(Long parentId);
     // Retrieves all students belonging to a specific school who are already linked to a parent
     List<Student> findAllBySchool_IdAndParentIsNotNull(Long schoolId);
+    // Counts the number of students currently enrolled in a specific school
+    long countBySchool_Id(Long schoolId);
 }

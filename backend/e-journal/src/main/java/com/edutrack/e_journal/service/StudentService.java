@@ -38,6 +38,14 @@ public class StudentService {
         User headmaster = resolveUser(principal);
         School school = resolveHeadmasterSchool(headmaster);
 
+        // Enforce the school's student capacity limit if one is set
+        if (school.getStudentLimit() != null) {
+            long current = studentRepository.countBySchool_Id(school.getId());
+            if (current >= school.getStudentLimit())
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "School has reached its student limit (" + school.getStudentLimit() + ")");
+        }
+
         // Load the target user entity or fail if the ID is invalid
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
