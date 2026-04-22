@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert, Box, Button, CircularProgress, Dialog, DialogActions,
-  DialogContent, DialogTitle, IconButton, Paper, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, Typography,
+  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
+  DialogContent, DialogTitle, IconButton, Paper, Stack, Table, TableBody,
+  TableCell, TableContainer, TableHead, TableRow, TextField, Typography,
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import BlockIcon from '@mui/icons-material/Block';
@@ -14,47 +14,56 @@ import api from '../../api/axiosInstance';
 function ViewStudents() {
   const { t } = useTranslation();
   const [students,   setStudents]   = useState([]);
-  const [schoolId,   setSchoolId]   = useState(null);
   const [schoolName, setSchoolName] = useState('');
-  const [parentMap,  setParentMap]  = useState({}); // studentId → parentName
+  const [parentMap,  setParentMap]  = useState({});
+  const [capacity,   setCapacity]   = useState({ current: 0, limit: -1 });
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  // Enroll dialog
-  const [enrollOpen,    setEnrollOpen]    = useState(false);
-  const [available,     setAvailable]     = useState([]);
-  const [availLoading,  setAvailLoading]  = useState(false);
-  const [enrollError,   setEnrollError]   = useState(null);
+  // Enroll (existing user) dialog
+  const [enrollOpen,   setEnrollOpen]   = useState(false);
+  const [available,    setAvailable]    = useState([]);
+  const [availLoading, setAvailLoading] = useState(false);
+  const [enrollError,  setEnrollError]  = useState(null);
+
+  // Create & Enroll dialog
+  const [createOpen,    setCreateOpen]    = useState(false);
+  const [createFirst,   setCreateFirst]   = useState('');
+  const [createLast,    setCreateLast]    = useState('');
+  const [createEmail,   setCreateEmail]   = useState('');
+  const [createPass,    setCreatePass]    = useState('');
+  const [createError,   setCreateError]   = useState(null);
+  const [createSaving,  setCreateSaving]  = useState(false);
 
   // Expel confirmation dialog
-  const [expelTarget, setExpelTarget] = useState(null); // { id, name }
+  const [expelTarget, setExpelTarget] = useState(null);
   const [expelError,  setExpelError]  = useState(null);
 
   useEffect(() => {
     api.get('/api/profile')
       .then(res => {
         const sid = res.data.schoolId;
-        setSchoolId(sid);
         setSchoolName(res.data.schoolName || '');
         return Promise.all([
           api.get(`/api/users/students/school/${sid}`),
           api.get(`/api/parents/school/${sid}`),
+          api.get('/api/students/capacity'),
         ]);
       })
-      .then(([studentRes, parentRes]) => {
+      .then(([studentRes, parentRes, capacityRes]) => {
         setStudents(studentRes.data);
-        // Build studentId → parentName map from ParentDto list
         const map = {};
         parentRes.data.forEach(p => {
-          p.children.forEach(c => {
-            map[c.id] = `${p.firstName} ${p.lastName}`;
-          });
+          p.children.forEach(c => { map[c.id] = `${p.firstName} ${p.lastName}`; });
         });
         setParentMap(map);
+        setCapacity(capacityRes.data);
       })
       .catch(() => setError(t('users.fetchError')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
+
+  const atLimit = capacity.limit !== -1 && capacity.current >= capacity.limit;
 
   // ── Enroll ────────────────────────────────────────────────────────────────
 
@@ -73,8 +82,32 @@ function ViewStudents() {
       .then(res => {
         setStudents(prev => [...prev, res.data]);
         setAvailable(prev => prev.filter(u => u.id !== userId));
+        setCapacity(prev => ({ ...prev, current: prev.current + 1 }));
       })
       .catch(() => setEnrollError(t('students.enrollError')));
+  };
+
+  // ── Create & Enroll ────────────────────────────────────────────────────────
+
+  const openCreate = () => {
+    setCreateFirst(''); setCreateLast(''); setCreateEmail(''); setCreatePass('');
+    setCreateError(null);
+    setCreateOpen(true);
+  };
+
+  const handleCreateAndEnroll = () => {
+    setCreateSaving(true);
+    setCreateError(null);
+    api.post('/api/students/create-and-enroll', {
+      firstName: createFirst, lastName: createLast, email: createEmail, password: createPass,
+    })
+      .then(res => {
+        setStudents(prev => [...prev, res.data]);
+        setCapacity(prev => ({ ...prev, current: prev.current + 1 }));
+        setCreateOpen(false);
+      })
+      .catch(() => setCreateError(t('students.createError')))
+      .finally(() => setCreateSaving(false));
   };
 
   // ── Expel ─────────────────────────────────────────────────────────────────
@@ -84,6 +117,7 @@ function ViewStudents() {
     api.delete(`/api/students/${expelTarget.id}/expel`)
       .then(() => {
         setStudents(prev => prev.filter(s => s.id !== expelTarget.id));
+        setCapacity(prev => ({ ...prev, current: prev.current - 1 }));
         setExpelTarget(null);
       })
       .catch(() => setExpelError(t('students.expelError')));
@@ -99,9 +133,33 @@ function ViewStudents() {
               <Typography variant="body2" color="text.secondary">{schoolName}</Typography>
             )}
           </Box>
-          <Button variant="contained" startIcon={<PersonAddIcon />} onClick={openEnroll}>
-            {t('students.enroll')}
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              size="small"
+              label={
+                capacity.limit === -1
+                  ? `${capacity.current} ${t('students.enrolled')}`
+                  : `${capacity.current} / ${capacity.limit} ${t('students.enrolled')}`
+              }
+              color={atLimit ? 'error' : 'default'}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<PersonAddIcon />}
+              disabled={atLimit}
+              onClick={openEnroll}
+            >
+              {t('students.enroll')}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddIcon />}
+              disabled={atLimit}
+              onClick={openCreate}
+            >
+              {t('students.createAndEnroll')}
+            </Button>
+          </Box>
         </Box>
 
         {error      && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -197,6 +255,52 @@ function ViewStudents() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEnrollOpen(false)}>{t('common.cancel')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create & Enroll Dialog */}
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t('students.createAndEnrollTitle')}</DialogTitle>
+        <DialogContent>
+          {createError && <Alert severity="error" sx={{ mb: 2 }}>{createError}</Alert>}
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label={t('users.firstName')}
+              value={createFirst}
+              onChange={e => setCreateFirst(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label={t('users.lastName')}
+              value={createLast}
+              onChange={e => setCreateLast(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label={t('users.email')}
+              type="email"
+              value={createEmail}
+              onChange={e => setCreateEmail(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label={t('login.password')}
+              type="password"
+              value={createPass}
+              onChange={e => setCreatePass(e.target.value)}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)}>{t('common.cancel')}</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateAndEnroll}
+            disabled={createSaving || !createFirst || !createLast || !createEmail || !createPass}
+          >
+            {t('students.createAndEnroll')}
+          </Button>
         </DialogActions>
       </Dialog>
 

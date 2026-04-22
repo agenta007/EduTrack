@@ -1,13 +1,16 @@
 package com.edutrack.e_journal.service;
 
 import com.edutrack.e_journal.dto.UserDto;
+import com.edutrack.e_journal.entity.Role;
 import com.edutrack.e_journal.entity.RoleEnum;
 import com.edutrack.e_journal.entity.School;
 import com.edutrack.e_journal.entity.Student;
 import com.edutrack.e_journal.entity.User;
+import com.edutrack.e_journal.repository.RoleRepository;
 import com.edutrack.e_journal.repository.SchoolRepository;
 import com.edutrack.e_journal.repository.StudentRepository;
 import com.edutrack.e_journal.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,13 +27,66 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final UserRepository    userRepository;
     private final SchoolRepository  schoolRepository;
+    private final RoleRepository    roleRepository;
+    private final PasswordEncoder   passwordEncoder;
 
     public List<UserDto> getAvailable() {
-        // Retrieve all students not currently enrolled in a class and map them to DTOs
         return userRepository.findAvailableStudents().stream()
                 .map(u -> new UserDto(u.getId(), u.getFirstName(), u.getLastName(),
                         u.getEmail(), u.getRole().getName().name(), null, null, u.getBio()))
                 .toList();
+    }
+
+    public int getSchoolStudentLimit(UserDetails principal)
+    {
+        User headmaster = resolveUser(principal);
+        School school   = resolveHeadmasterSchool(headmaster);
+        return school.getStudentLimit() == null ? -1 : school.getStudentLimit();
+    }
+
+    public Map<String, Object> getCapacity(UserDetails principal) {
+        User headmaster = resolveUser(principal);
+        School school   = resolveHeadmasterSchool(headmaster);
+        long current    = studentRepository.countBySchool_Id(school.getId());
+        return Map.of(
+                "current", current,
+                "limit",   school.getStudentLimit() == null ? -1 : school.getStudentLimit()
+        );
+    }
+
+    public UserDto createAndEnroll(String firstName, String lastName, String email,
+                                   String password, UserDetails principal) {
+        if (userRepository.existsByEmail(email))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
+
+        User headmaster = resolveUser(principal);
+        School school   = resolveHeadmasterSchool(headmaster);
+
+        if (school.getStudentLimit() != null) {
+            long current = studentRepository.countBySchool_Id(school.getId());
+            if (current >= school.getStudentLimit())
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "School has reached its student limit (" + school.getStudentLimit() + ")");
+        }
+
+        Role studentRole = roleRepository.findByName(RoleEnum.STUDENT)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "STUDENT role not found"));
+
+        User user = User.builder()
+                .firstName(firstName)
+                .lastName(lastName)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(password))
+                .role(studentRole)
+                .build();
+        user = userRepository.save(user);
+
+        Student student = Student.builder().user(user).school(school).build();
+        studentRepository.save(student);
+
+        return new UserDto(user.getId(), user.getFirstName(), user.getLastName(),
+                user.getEmail(), user.getRole().getName().name(),
+                school.getId(), school.getName(), user.getBio());
     }
 
     public UserDto enroll(Long userId, UserDetails principal) {

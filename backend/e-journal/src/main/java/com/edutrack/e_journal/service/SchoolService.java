@@ -270,6 +270,14 @@ public class SchoolService {
                         "No school assigned to this headmaster"));
     }
 
+    public int getLimit(Long schoolId) {
+        // Load the managed School entity or throw 404 if the ID is invalid
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "School not found"));
+        // Return the student limit for the school
+        return school.getStudentLimit();
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private User resolveHeadmasterById(Long id) {

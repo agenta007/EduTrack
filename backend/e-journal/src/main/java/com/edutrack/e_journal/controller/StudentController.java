@@ -2,6 +2,11 @@ package com.edutrack.e_journal.controller;
 
 import com.edutrack.e_journal.dto.UserDto;
 import com.edutrack.e_journal.service.StudentService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/students")
@@ -31,9 +37,31 @@ public class StudentController {
     @GetMapping("/available")
     @PreAuthorize("hasRole('HEADMASTER')")
     public List<UserDto> getAvailable() {
-        // Retrieve the list of student users who are not yet assigned to any school class
-        //System.out.println(studentService.getAvailable());
         return studentService.getAvailable();
+    }
+
+    @Operation(summary = "Get school student capacity", description = "Returns the current student count and the school's student limit (null means no limit). HEADMASTER only.")
+    @ApiResponse(responseCode = "200", description = "Capacity info returned")
+    @GetMapping("/capacity")
+    @PreAuthorize("hasRole('HEADMASTER')")
+    public Map<String, Object> getCapacity(@AuthenticationPrincipal UserDetails principal) {
+        return studentService.getCapacity(principal);
+    }
+
+    @Operation(summary = "Create and enroll a student", description = "Creates a new STUDENT-role user and immediately enrolls them in the headmaster's school. HEADMASTER only.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Student created and enrolled"),
+        @ApiResponse(responseCode = "409", description = "Email already in use or school at capacity")
+    })
+    //POST method for headmasters to create and enroll users
+    @PostMapping("/create-and-enroll")
+    @PreAuthorize("hasRole('HEADMASTER')")
+    public ResponseEntity<UserDto> createAndEnroll(
+            @Valid @RequestBody CreateStudentRequest req,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.status(201)
+                .body(studentService.createAndEnroll(req.getFirstName(), req.getLastName(),
+                        req.getEmail(), req.getPassword(), principal));
     }
 
     @Operation(summary = "Enroll a student", description = "Assigns the student to the headmaster's school. Creates a student record if one does not exist yet. HEADMASTER only.")
@@ -66,5 +94,23 @@ public class StudentController {
         studentService.expel(studentId, principal);
         // Return 204 No Content to indicate successful processing without a response body
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Get school student limit", description = "Returns the student_limit for the headmaster's school. HEADMASTER or ADMIN.")
+    @ApiResponse(responseCode = "200", description = "Student limit returned")
+    @GetMapping("/limit")
+    @PreAuthorize("hasAnyRole('HEADMASTER', 'ADMIN')")
+    public int getStudentLimit(@AuthenticationPrincipal UserDetails principal) {
+        return studentService.getSchoolStudentLimit(principal);
+    }
+
+    // ── Inline request DTOs ──────────────────────────────────────────────────
+
+    @Getter @NoArgsConstructor
+    public static class CreateStudentRequest {
+        @NotBlank private String firstName;
+        @NotBlank private String lastName;
+        @NotBlank @Email private String email;
+        @NotBlank private String password;
     }
 }

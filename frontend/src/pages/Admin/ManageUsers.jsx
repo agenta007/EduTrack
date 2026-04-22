@@ -176,7 +176,7 @@ function ManageUsers() {
 
   const isAddValid = addForm.firstName && addForm.lastName && addForm.email && addForm.password && addForm.role;
   const isEditValid = editForm.firstName && editForm.lastName && editForm.email && editForm.role;
-
+  console.log(users);
   return (
     <Layout>
       <Box sx={{ p: 3 }}>
@@ -234,6 +234,7 @@ function ManageUsers() {
                     { id: 'lastName',  label: t('users.lastName') },
                     { id: 'email',     label: t('users.email') },
                     { id: 'role',      label: t('users.role') },
+                    { id: 'schoolName',label: t('users.schoolName') },
                   ].map(col => (
                     <TableCell key={col.id} sortDirection={sortBy === col.id ? sortDir : false}>
                       <TableSortLabel
