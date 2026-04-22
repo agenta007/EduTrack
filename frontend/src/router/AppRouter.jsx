@@ -406,15 +406,6 @@ function AppRouter() {
         }
       />
 
-      <Route 
-        path='/select/subject/statistics'
-        element={
-          <ProtectedRoute roles={["ADMIN", "HEADMASTER"]}>
-            <SelectSubjectForStatistics />
-          </ProtectedRoute>
-        }
-      />
-
         {/* same as teacher statistics */}
       <Route 
         path='/select/class/schedule'

@@ -176,7 +176,7 @@ function TeacherStatistics() {
     );
   }, [teacherSubjectsByClass, gradesByClass, classNames, subjectNames]);
 
-  const title = isOwnStats ? t('stats.mystatistics')  : t('users.schoolName') ;
+  const title = isOwnStats ? t('stats.mystatistics') : t('stats.stats');
 
   return (
     <Layout>
@@ -191,13 +191,13 @@ function TeacherStatistics() {
           <>
             <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>{title}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Averages computed only for subjects you teach, in classes you teach.
+              {t('stats.subtitle')}
             </Typography>
 
             <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
-              <Tab label="By Class" />
-              <Tab label="By Subject" />
-              <Tab label="By Student" />
+              <Tab label={t('stats.byClass')} />
+              <Tab label={t('stats.bySubject')} />
+              <Tab label={t('stats.byStudent')} />
             </Tabs>
 
             {/* ── BY CLASS ── */}
@@ -206,16 +206,16 @@ function TeacherStatistics() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Class</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Grades given</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Average</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Pass rate</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('stats.class')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.gradesGiven')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.avgGrade')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.passRate')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {classStats.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">No grade data yet.</TableCell>
+                        <TableCell colSpan={4} align="center">{t('stats.noGradeData')}</TableCell>
                       </TableRow>
                     ) : classStats.map(row => (
                       <TableRow key={row.classId} hover>
@@ -245,16 +245,16 @@ function TeacherStatistics() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Subject</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Grades given</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Average</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Pass rate</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('stats.subject')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.gradesGiven')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.avgGrade')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.passRate')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {subjectStats.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">No grade data yet.</TableCell>
+                        <TableCell colSpan={4} align="center">{t('stats.noGradeData')}</TableCell>
                       </TableRow>
                     ) : subjectStats.map(row => (
                       <TableRow key={row.subjectId} hover>
@@ -284,16 +284,16 @@ function TeacherStatistics() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Class</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Student</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">Overall avg</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Per subject</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('stats.class')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('stats.students')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="center">{t('stats.overallAvg')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('stats.perSubject')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {studentStats.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} align="center">No grade data yet.</TableCell>
+                        <TableCell colSpan={4} align="center">{t('stats.noGradeData')}</TableCell>
                       </TableRow>
                     ) : studentStats.map(row => (
                       <TableRow key={`${row.classId}-${row.studentId}`} hover>

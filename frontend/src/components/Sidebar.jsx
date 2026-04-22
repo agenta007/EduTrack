@@ -83,10 +83,10 @@ const Sidebar = () => {
                 key: "statistics",
                 label: t('nav.statistics'),
                 icon: <StatsIcon />,
+                //on hover a submenu appears, admin can see a comparison of how all students are doing
                 submenu: [
                     {key: "schoolStats", label: t('nav.schoolStatistics'), to: "/select/school/statistics"},
                     {key: "teacherStats", label: t('nav.teacherStatistics'), to: "/select/teacher/statistics"},
-                    {key: "subjectStats", label: t('nav.subjectStatistics'), to: "/select/subject/statistics"}
                 ]
             },
             {key: "schools", label: t('nav.schools'), icon: <SchoolIcon />, to: "/admin/viewSchools"},
