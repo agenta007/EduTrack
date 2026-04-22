@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EduTrack — Source Docs</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h2>EduTrack Source</h2>
+  <div class="tree"><details open><summary>backend</summary>
+<details><summary>e-journal</summary>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java">EJournalApplication.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java">OpenApiConfig.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java">SecurityConfig.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java">AbsenceController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java">AuthController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ClassController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ClassController.java">ClassController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ComplaintController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ComplaintController.java">ComplaintController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/GradeController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/GradeController.java">GradeController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ParentController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ParentController.java">ParentController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ProfileController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ProfileController.java">ProfileController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ScheduleController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ScheduleController.java">ScheduleController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolController.java">SchoolController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolEventController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolEventController.java">SchoolEventController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/StudentController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/StudentController.java">StudentController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SubjectController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SubjectController.java">SubjectController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/TeacherController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/TeacherController.java">TeacherController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/UserController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/UserController.java">UserController.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceDto.java">AbsenceDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceRequest.java">AbsenceRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AuthResponse.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AuthResponse.java">AuthResponse.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ChangePasswordRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ChangePasswordRequest.java">ChangePasswordRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintDto.java">ComplaintDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintRequest.java">ComplaintRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/CreateUserRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/CreateUserRequest.java">CreateUserRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeDto.java">GradeDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeRequest.java">GradeRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/LoginRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/LoginRequest.java">LoginRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ParentDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ParentDto.java">ParentDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleDto.java">ScheduleDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleRequest.java">ScheduleRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolClassDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolClassDto.java">SchoolClassDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolDto.java">SchoolDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventDto.java">SchoolEventDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventRequest.java">SchoolEventRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolRequest.java">SchoolRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryDto.java">SchoolScheduleEntryDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryRequest.java">SchoolScheduleEntryRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolTermConfigDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolTermConfigDto.java">SchoolTermConfigDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectDto.java">SubjectDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectRequest.java">SubjectRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/TeacherDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/TeacherDto.java">TeacherDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UpdateUserRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UpdateUserRequest.java">UpdateUserRequest.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserDto.java">UserDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserSummaryDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserSummaryDto.java">UserSummaryDto.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Absence.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Absence.java">Absence.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Complaint.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Complaint.java">Complaint.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/EventType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/EventType.java">EventType.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Grade.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Grade.java">Grade.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/LectureType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/LectureType.java">LectureType.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Role.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Role.java">Role.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/RoleEnum.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/RoleEnum.java">RoleEnum.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Schedule.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Schedule.java">Schedule.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/ScheduleEntryType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/ScheduleEntryType.java">ScheduleEntryType.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/School.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/School.java">School.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolClass.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolClass.java">SchoolClass.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolEvent.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolEvent.java">SchoolEvent.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolProfile.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolProfile.java">SchoolProfile.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolScheduleEntry.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolScheduleEntry.java">SchoolScheduleEntry.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolTermConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolTermConfig.java">SchoolTermConfig.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolType.java">SchoolType.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Student.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Student.java">Student.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Subject.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Subject.java">Subject.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Teacher.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Teacher.java">Teacher.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/User.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/User.java">User.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/AbsenceRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/AbsenceRepository.java">AbsenceRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ClassRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ClassRepository.java">ClassRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ComplaintRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ComplaintRepository.java">ComplaintRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/GradeRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/GradeRepository.java">GradeRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/RoleRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/RoleRepository.java">RoleRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ScheduleRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ScheduleRepository.java">ScheduleRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolEventRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolEventRepository.java">SchoolEventRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolProfileRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolProfileRepository.java">SchoolProfileRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolRepository.java">SchoolRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolScheduleEntryRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolScheduleEntryRepository.java">SchoolScheduleEntryRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolTermConfigRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolTermConfigRepository.java">SchoolTermConfigRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/StudentRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/StudentRepository.java">StudentRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SubjectRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SubjectRepository.java">SubjectRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/TeacherRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/TeacherRepository.java">TeacherRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/UserRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/UserRepository.java">UserRepository.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/CustomUserDetailsService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/CustomUserDetailsService.java">CustomUserDetailsService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtAuthenticationFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtAuthenticationFilter.java">JwtAuthenticationFilter.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtUtils.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtUtils.java">JwtUtils.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/LocalhostAdminFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/LocalhostAdminFilter.java">LocalhostAdminFilter.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/RequestLoggingFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/RequestLoggingFilter.java">RequestLoggingFilter.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/AbsenceService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/AbsenceService.java">AbsenceService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ClassService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ClassService.java">ClassService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ComplaintService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ComplaintService.java">ComplaintService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/GradeService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/GradeService.java">GradeService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ParentService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ParentService.java">ParentService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ProfileService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ProfileService.java">ProfileService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ScheduleService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ScheduleService.java">ScheduleService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolEventService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolEventService.java">SchoolEventService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolService.java">SchoolService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/StudentService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/StudentService.java">StudentService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SubjectService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SubjectService.java">SubjectService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/TeacherService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/TeacherService.java">TeacherService.java</a>
+<a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/UserService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/UserService.java">UserService.java</a>
+</details>
+</details>
+<details open><summary>frontend</summary>
+<details><summary>src</summary>
+<a href="../source/frontend/src/App.jsx.html" data-path="frontend/src/App.jsx">App.jsx</a>
+<a href="../source/frontend/src/api/axiosInstance.js.html" data-path="frontend/src/api/axiosInstance.js">axiosInstance.js</a>
+<a href="../source/frontend/src/components/Layout.jsx.html" data-path="frontend/src/components/Layout.jsx">Layout.jsx</a>
+<a href="../source/frontend/src/components/Sidebar.jsx.html" data-path="frontend/src/components/Sidebar.jsx">Sidebar.jsx</a>
+<a href="../source/frontend/src/components/UserAvatar.jsx.html" data-path="frontend/src/components/UserAvatar.jsx">UserAvatar.jsx</a>
+<a href="../source/frontend/src/components/WelcomeBanner.jsx.html" data-path="frontend/src/components/WelcomeBanner.jsx">WelcomeBanner.jsx</a>
+<a href="../source/frontend/src/context/AuthProvider.jsx.html" data-path="frontend/src/context/AuthProvider.jsx">AuthProvider.jsx</a>
+<a href="../source/frontend/src/context/SidebarContext.jsx.html" data-path="frontend/src/context/SidebarContext.jsx">SidebarContext.jsx</a>
+<a href="../source/frontend/src/context/StudentContext.jsx.html" data-path="frontend/src/context/StudentContext.jsx">StudentContext.jsx</a>
+<a href="../source/frontend/src/hooks/useAuth.jsx.html" data-path="frontend/src/hooks/useAuth.jsx">useAuth.jsx</a>
+<a href="../source/frontend/src/i18n/index.js.html" data-path="frontend/src/i18n/index.js">index.js</a>
+<a href="../source/frontend/src/main.jsx.html" data-path="frontend/src/main.jsx">main.jsx</a>
+<a href="../source/frontend/src/pages/Absences/AllSchoolsAbsences.jsx.html" data-path="frontend/src/pages/Absences/AllSchoolsAbsences.jsx">AllSchoolsAbsences.jsx</a>
+<a href="../source/frontend/src/pages/Absences/ClassAbsences.jsx.html" data-path="frontend/src/pages/Absences/ClassAbsences.jsx">ClassAbsences.jsx</a>
+<a href="../source/frontend/src/pages/Absences/SchoolAbsences.jsx.html" data-path="frontend/src/pages/Absences/SchoolAbsences.jsx">SchoolAbsences.jsx</a>
+<a href="../source/frontend/src/pages/Absences/StudentAbsences.jsx.html" data-path="frontend/src/pages/Absences/StudentAbsences.jsx">StudentAbsences.jsx</a>
+<a href="../source/frontend/src/pages/Admin/AdminHome.jsx.html" data-path="frontend/src/pages/Admin/AdminHome.jsx">AdminHome.jsx</a>
+<a href="../source/frontend/src/pages/Admin/ManageUsers.jsx.html" data-path="frontend/src/pages/Admin/ManageUsers.jsx">ManageUsers.jsx</a>
+<a href="../source/frontend/src/pages/Admin/ViewSchools.jsx.html" data-path="frontend/src/pages/Admin/ViewSchools.jsx">ViewSchools.jsx</a>
+<a href="../source/frontend/src/pages/Admin/ViewSubjects.jsx.html" data-path="frontend/src/pages/Admin/ViewSubjects.jsx">ViewSubjects.jsx</a>
+<a href="../source/frontend/src/pages/Complaints/AllSchoolsCompaints.jsx.html" data-path="frontend/src/pages/Complaints/AllSchoolsCompaints.jsx">AllSchoolsCompaints.jsx</a>
+<a href="../source/frontend/src/pages/Complaints/ClassComplaints.jsx.html" data-path="frontend/src/pages/Complaints/ClassComplaints.jsx">ClassComplaints.jsx</a>
+<a href="../source/frontend/src/pages/Complaints/SchoolComplaints.jsx.html" data-path="frontend/src/pages/Complaints/SchoolComplaints.jsx">SchoolComplaints.jsx</a>
+<a href="../source/frontend/src/pages/Complaints/StudentComplaints.jsx.html" data-path="frontend/src/pages/Complaints/StudentComplaints.jsx">StudentComplaints.jsx</a>
+<a href="../source/frontend/src/pages/Grades/AllSchoolsGrades.jsx.html" data-path="frontend/src/pages/Grades/AllSchoolsGrades.jsx">AllSchoolsGrades.jsx</a>
+<a href="../source/frontend/src/pages/Grades/ClassGrades.jsx.html" data-path="frontend/src/pages/Grades/ClassGrades.jsx">ClassGrades.jsx</a>
+<a href="../source/frontend/src/pages/Grades/SchoolGrades.jsx.html" data-path="frontend/src/pages/Grades/SchoolGrades.jsx">SchoolGrades.jsx</a>
+<a href="../source/frontend/src/pages/Grades/StudentGrades.jsx.html" data-path="frontend/src/pages/Grades/StudentGrades.jsx">StudentGrades.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/ClassTimetable.jsx.html" data-path="frontend/src/pages/Headmaster/ClassTimetable.jsx">ClassTimetable.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/HeadmasterHome.jsx.html" data-path="frontend/src/pages/Headmaster/HeadmasterHome.jsx">HeadmasterHome.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/HeadmasterSchool.jsx.html" data-path="frontend/src/pages/Headmaster/HeadmasterSchool.jsx">HeadmasterSchool.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/ViewParents.jsx.html" data-path="frontend/src/pages/Headmaster/ViewParents.jsx">ViewParents.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/ViewStudents.jsx.html" data-path="frontend/src/pages/Headmaster/ViewStudents.jsx">ViewStudents.jsx</a>
+<a href="../source/frontend/src/pages/Headmaster/ViewTeachers.jsx.html" data-path="frontend/src/pages/Headmaster/ViewTeachers.jsx">ViewTeachers.jsx</a>
+<a href="../source/frontend/src/pages/Login/Login.jsx.html" data-path="frontend/src/pages/Login/Login.jsx">Login.jsx</a>
+<a href="../source/frontend/src/pages/Parent/ParentHome.jsx.html" data-path="frontend/src/pages/Parent/ParentHome.jsx">ParentHome.jsx</a>
+<a href="../source/frontend/src/pages/Profile/Profile.jsx.html" data-path="frontend/src/pages/Profile/Profile.jsx">Profile.jsx</a>
+<a href="../source/frontend/src/pages/Schedule/Schedule.jsx.html" data-path="frontend/src/pages/Schedule/Schedule.jsx">Schedule.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectClassForAbsenceView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForAbsenceView.jsx">SelectClassForAbsenceView.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectClassForComplaintsView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForComplaintsView.jsx">SelectClassForComplaintsView.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectClassForGradesView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForGradesView.jsx">SelectClassForGradesView.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectClassForScheduleView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForScheduleView.jsx">SelectClassForScheduleView.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectSchoolForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectSchoolForStatistics.jsx">SelectSchoolForStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectSubjectForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectSubjectForStatistics.jsx">SelectSubjectForStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Selection Pages/SelectTeacherForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectTeacherForStatistics.jsx">SelectTeacherForStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Statistics/SchoolStatistics.jsx.html" data-path="frontend/src/pages/Statistics/SchoolStatistics.jsx">SchoolStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Statistics/SubjectStatistics.jsx.html" data-path="frontend/src/pages/Statistics/SubjectStatistics.jsx">SubjectStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Statistics/TeacherStatistics.jsx.html" data-path="frontend/src/pages/Statistics/TeacherStatistics.jsx">TeacherStatistics.jsx</a>
+<a href="../source/frontend/src/pages/Student/StudentCalendar.jsx.html" data-path="frontend/src/pages/Student/StudentCalendar.jsx">StudentCalendar.jsx</a>
+<a href="../source/frontend/src/pages/Student/StudentHome.jsx.html" data-path="frontend/src/pages/Student/StudentHome.jsx">StudentHome.jsx</a>
+<a href="../source/frontend/src/pages/Teacher/TeacherHome.jsx.html" data-path="frontend/src/pages/Teacher/TeacherHome.jsx">TeacherHome.jsx</a>
+<a href="../source/frontend/src/pages/Teacher/TeacherSchedule.jsx.html" data-path="frontend/src/pages/Teacher/TeacherSchedule.jsx">TeacherSchedule.jsx</a>
+<a href="../source/frontend/src/pages/Teacher/TeacherSchool.jsx.html" data-path="frontend/src/pages/Teacher/TeacherSchool.jsx">TeacherSchool.jsx</a>
+<a href="../source/frontend/src/pages/Unauthorized/Unauthorized.jsx.html" data-path="frontend/src/pages/Unauthorized/Unauthorized.jsx">Unauthorized.jsx</a>
+<a href="../source/frontend/src/router/AppRouter.jsx.html" data-path="frontend/src/router/AppRouter.jsx">AppRouter.jsx</a>
+<a href="../source/frontend/src/router/ProtectedRoute.jsx.html" data-path="frontend/src/router/ProtectedRoute.jsx">ProtectedRoute.jsx</a>
+<a href="../source/frontend/src/router/RoleRedirect.jsx.html" data-path="frontend/src/router/RoleRedirect.jsx">RoleRedirect.jsx</a>
+<a href="../source/frontend/src/styles/global.css.html" data-path="frontend/src/styles/global.css">global.css</a>
+<a href="../source/frontend/src/styles/login.css.html" data-path="frontend/src/styles/login.css">login.css</a>
+<a href="../source/frontend/src/styles/sidebar.css.html" data-path="frontend/src/styles/sidebar.css">sidebar.css</a>
+<a href="../source/frontend/src/theme.jsx.html" data-path="frontend/src/theme.jsx">theme.jsx</a>
+</details>
+</details>
+<details open><summary>sql</summary>
+<a href="../source/sql/create-tables.sql.html" data-path="sql/create-tables.sql">create-tables.sql</a>
+<a href="../source/sql/insert-demo-data.sql.html" data-path="sql/insert-demo-data.sql">insert-demo-data.sql</a>
+</details></div>
+</div>
+<div id="main">
+  <div id="file-header">Select a file &nbsp;·&nbsp; Generated 2026-04-19 09:46</div>
+  <div id="code-wrap"><div class="index-page"><h1>EduTrack — Source Documentation</h1>
+<p>160 files &nbsp;·&nbsp; Generated 2026-04-19 09:46</p>
+<h2>backend</h2><ul>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java">backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java">backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java">backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ClassController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ClassController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ClassController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ComplaintController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ComplaintController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ComplaintController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/GradeController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/GradeController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/GradeController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ParentController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ParentController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ParentController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ProfileController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ProfileController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ProfileController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ScheduleController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ScheduleController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/ScheduleController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolEventController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolEventController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SchoolEventController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/StudentController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/StudentController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/StudentController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SubjectController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SubjectController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/SubjectController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/TeacherController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/TeacherController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/TeacherController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/controller/UserController.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/controller/UserController.java">backend/e-journal/src/main/java/com/edutrack/e_journal/controller/UserController.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AbsenceRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AuthResponse.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AuthResponse.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/AuthResponse.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ChangePasswordRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ChangePasswordRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ChangePasswordRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ComplaintRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/CreateUserRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/CreateUserRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/CreateUserRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/GradeRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/LoginRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/LoginRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/LoginRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ParentDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ParentDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ParentDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/ScheduleRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolClassDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolClassDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolClassDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolEventRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolScheduleEntryRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolTermConfigDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolTermConfigDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SchoolTermConfigDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/SubjectRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/TeacherDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/TeacherDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/TeacherDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UpdateUserRequest.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UpdateUserRequest.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UpdateUserRequest.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserSummaryDto.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserSummaryDto.java">backend/e-journal/src/main/java/com/edutrack/e_journal/dto/UserSummaryDto.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Absence.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Absence.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Absence.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Complaint.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Complaint.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Complaint.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/EventType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/EventType.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/EventType.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Grade.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Grade.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Grade.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/LectureType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/LectureType.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/LectureType.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Role.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Role.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Role.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/RoleEnum.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/RoleEnum.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/RoleEnum.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Schedule.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Schedule.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Schedule.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/ScheduleEntryType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/ScheduleEntryType.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/ScheduleEntryType.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/School.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/School.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/School.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolClass.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolClass.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolClass.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolEvent.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolEvent.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolEvent.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolProfile.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolProfile.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolProfile.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolScheduleEntry.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolScheduleEntry.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolScheduleEntry.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolTermConfig.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolTermConfig.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolTermConfig.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolType.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolType.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/SchoolType.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Student.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Student.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Student.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Subject.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Subject.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Subject.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Teacher.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Teacher.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/Teacher.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/entity/User.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/entity/User.java">backend/e-journal/src/main/java/com/edutrack/e_journal/entity/User.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/AbsenceRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/AbsenceRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/AbsenceRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ClassRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ClassRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ClassRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ComplaintRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ComplaintRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ComplaintRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/GradeRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/GradeRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/GradeRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/RoleRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/RoleRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/RoleRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ScheduleRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ScheduleRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/ScheduleRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolEventRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolEventRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolEventRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolProfileRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolProfileRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolProfileRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolScheduleEntryRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolScheduleEntryRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolScheduleEntryRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolTermConfigRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolTermConfigRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SchoolTermConfigRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/StudentRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/StudentRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/StudentRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SubjectRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SubjectRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/SubjectRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/TeacherRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/TeacherRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/TeacherRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/repository/UserRepository.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/repository/UserRepository.java">backend/e-journal/src/main/java/com/edutrack/e_journal/repository/UserRepository.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/CustomUserDetailsService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/CustomUserDetailsService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/security/CustomUserDetailsService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtAuthenticationFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtAuthenticationFilter.java">backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtAuthenticationFilter.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtUtils.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtUtils.java">backend/e-journal/src/main/java/com/edutrack/e_journal/security/JwtUtils.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/LocalhostAdminFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/LocalhostAdminFilter.java">backend/e-journal/src/main/java/com/edutrack/e_journal/security/LocalhostAdminFilter.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/security/RequestLoggingFilter.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/security/RequestLoggingFilter.java">backend/e-journal/src/main/java/com/edutrack/e_journal/security/RequestLoggingFilter.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/AbsenceService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/AbsenceService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/AbsenceService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ClassService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ClassService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/ClassService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ComplaintService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ComplaintService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/ComplaintService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/GradeService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/GradeService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/GradeService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ParentService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ParentService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/ParentService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ProfileService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ProfileService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/ProfileService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/ScheduleService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/ScheduleService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/ScheduleService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolEventService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolEventService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolEventService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/SchoolService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/StudentService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/StudentService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/StudentService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/SubjectService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/SubjectService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/SubjectService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/TeacherService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/TeacherService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/TeacherService.java</a></li>
+<li><a href="../source/backend/e-journal/src/main/java/com/edutrack/e_journal/service/UserService.java.html" data-path="backend/e-journal/src/main/java/com/edutrack/e_journal/service/UserService.java">backend/e-journal/src/main/java/com/edutrack/e_journal/service/UserService.java</a></li>
+</ul>
+<h2>frontend</h2><ul>
+<li><a href="../source/frontend/src/App.jsx.html" data-path="frontend/src/App.jsx">frontend/src/App.jsx</a></li>
+<li><a href="../source/frontend/src/api/axiosInstance.js.html" data-path="frontend/src/api/axiosInstance.js">frontend/src/api/axiosInstance.js</a></li>
+<li><a href="../source/frontend/src/components/Layout.jsx.html" data-path="frontend/src/components/Layout.jsx">frontend/src/components/Layout.jsx</a></li>
+<li><a href="../source/frontend/src/components/Sidebar.jsx.html" data-path="frontend/src/components/Sidebar.jsx">frontend/src/components/Sidebar.jsx</a></li>
+<li><a href="../source/frontend/src/components/UserAvatar.jsx.html" data-path="frontend/src/components/UserAvatar.jsx">frontend/src/components/UserAvatar.jsx</a></li>
+<li><a href="../source/frontend/src/components/WelcomeBanner.jsx.html" data-path="frontend/src/components/WelcomeBanner.jsx">frontend/src/components/WelcomeBanner.jsx</a></li>
+<li><a href="../source/frontend/src/context/AuthProvider.jsx.html" data-path="frontend/src/context/AuthProvider.jsx">frontend/src/context/AuthProvider.jsx</a></li>
+<li><a href="../source/frontend/src/context/SidebarContext.jsx.html" data-path="frontend/src/context/SidebarContext.jsx">frontend/src/context/SidebarContext.jsx</a></li>
+<li><a href="../source/frontend/src/context/StudentContext.jsx.html" data-path="frontend/src/context/StudentContext.jsx">frontend/src/context/StudentContext.jsx</a></li>
+<li><a href="../source/frontend/src/hooks/useAuth.jsx.html" data-path="frontend/src/hooks/useAuth.jsx">frontend/src/hooks/useAuth.jsx</a></li>
+<li><a href="../source/frontend/src/i18n/index.js.html" data-path="frontend/src/i18n/index.js">frontend/src/i18n/index.js</a></li>
+<li><a href="../source/frontend/src/main.jsx.html" data-path="frontend/src/main.jsx">frontend/src/main.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Absences/AllSchoolsAbsences.jsx.html" data-path="frontend/src/pages/Absences/AllSchoolsAbsences.jsx">frontend/src/pages/Absences/AllSchoolsAbsences.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Absences/ClassAbsences.jsx.html" data-path="frontend/src/pages/Absences/ClassAbsences.jsx">frontend/src/pages/Absences/ClassAbsences.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Absences/SchoolAbsences.jsx.html" data-path="frontend/src/pages/Absences/SchoolAbsences.jsx">frontend/src/pages/Absences/SchoolAbsences.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Absences/StudentAbsences.jsx.html" data-path="frontend/src/pages/Absences/StudentAbsences.jsx">frontend/src/pages/Absences/StudentAbsences.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Admin/AdminHome.jsx.html" data-path="frontend/src/pages/Admin/AdminHome.jsx">frontend/src/pages/Admin/AdminHome.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Admin/ManageUsers.jsx.html" data-path="frontend/src/pages/Admin/ManageUsers.jsx">frontend/src/pages/Admin/ManageUsers.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Admin/ViewSchools.jsx.html" data-path="frontend/src/pages/Admin/ViewSchools.jsx">frontend/src/pages/Admin/ViewSchools.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Admin/ViewSubjects.jsx.html" data-path="frontend/src/pages/Admin/ViewSubjects.jsx">frontend/src/pages/Admin/ViewSubjects.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Complaints/AllSchoolsCompaints.jsx.html" data-path="frontend/src/pages/Complaints/AllSchoolsCompaints.jsx">frontend/src/pages/Complaints/AllSchoolsCompaints.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Complaints/ClassComplaints.jsx.html" data-path="frontend/src/pages/Complaints/ClassComplaints.jsx">frontend/src/pages/Complaints/ClassComplaints.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Complaints/SchoolComplaints.jsx.html" data-path="frontend/src/pages/Complaints/SchoolComplaints.jsx">frontend/src/pages/Complaints/SchoolComplaints.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Complaints/StudentComplaints.jsx.html" data-path="frontend/src/pages/Complaints/StudentComplaints.jsx">frontend/src/pages/Complaints/StudentComplaints.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Grades/AllSchoolsGrades.jsx.html" data-path="frontend/src/pages/Grades/AllSchoolsGrades.jsx">frontend/src/pages/Grades/AllSchoolsGrades.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Grades/ClassGrades.jsx.html" data-path="frontend/src/pages/Grades/ClassGrades.jsx">frontend/src/pages/Grades/ClassGrades.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Grades/SchoolGrades.jsx.html" data-path="frontend/src/pages/Grades/SchoolGrades.jsx">frontend/src/pages/Grades/SchoolGrades.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Grades/StudentGrades.jsx.html" data-path="frontend/src/pages/Grades/StudentGrades.jsx">frontend/src/pages/Grades/StudentGrades.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/ClassTimetable.jsx.html" data-path="frontend/src/pages/Headmaster/ClassTimetable.jsx">frontend/src/pages/Headmaster/ClassTimetable.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/HeadmasterHome.jsx.html" data-path="frontend/src/pages/Headmaster/HeadmasterHome.jsx">frontend/src/pages/Headmaster/HeadmasterHome.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/HeadmasterSchool.jsx.html" data-path="frontend/src/pages/Headmaster/HeadmasterSchool.jsx">frontend/src/pages/Headmaster/HeadmasterSchool.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/ViewParents.jsx.html" data-path="frontend/src/pages/Headmaster/ViewParents.jsx">frontend/src/pages/Headmaster/ViewParents.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/ViewStudents.jsx.html" data-path="frontend/src/pages/Headmaster/ViewStudents.jsx">frontend/src/pages/Headmaster/ViewStudents.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Headmaster/ViewTeachers.jsx.html" data-path="frontend/src/pages/Headmaster/ViewTeachers.jsx">frontend/src/pages/Headmaster/ViewTeachers.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Login/Login.jsx.html" data-path="frontend/src/pages/Login/Login.jsx">frontend/src/pages/Login/Login.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Parent/ParentHome.jsx.html" data-path="frontend/src/pages/Parent/ParentHome.jsx">frontend/src/pages/Parent/ParentHome.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Profile/Profile.jsx.html" data-path="frontend/src/pages/Profile/Profile.jsx">frontend/src/pages/Profile/Profile.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Schedule/Schedule.jsx.html" data-path="frontend/src/pages/Schedule/Schedule.jsx">frontend/src/pages/Schedule/Schedule.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectClassForAbsenceView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForAbsenceView.jsx">frontend/src/pages/Selection Pages/SelectClassForAbsenceView.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectClassForComplaintsView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForComplaintsView.jsx">frontend/src/pages/Selection Pages/SelectClassForComplaintsView.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectClassForGradesView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForGradesView.jsx">frontend/src/pages/Selection Pages/SelectClassForGradesView.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectClassForScheduleView.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectClassForScheduleView.jsx">frontend/src/pages/Selection Pages/SelectClassForScheduleView.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectSchoolForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectSchoolForStatistics.jsx">frontend/src/pages/Selection Pages/SelectSchoolForStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectSubjectForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectSubjectForStatistics.jsx">frontend/src/pages/Selection Pages/SelectSubjectForStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Selection Pages/SelectTeacherForStatistics.jsx.html" data-path="frontend/src/pages/Selection Pages/SelectTeacherForStatistics.jsx">frontend/src/pages/Selection Pages/SelectTeacherForStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Statistics/SchoolStatistics.jsx.html" data-path="frontend/src/pages/Statistics/SchoolStatistics.jsx">frontend/src/pages/Statistics/SchoolStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Statistics/SubjectStatistics.jsx.html" data-path="frontend/src/pages/Statistics/SubjectStatistics.jsx">frontend/src/pages/Statistics/SubjectStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Statistics/TeacherStatistics.jsx.html" data-path="frontend/src/pages/Statistics/TeacherStatistics.jsx">frontend/src/pages/Statistics/TeacherStatistics.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Student/StudentCalendar.jsx.html" data-path="frontend/src/pages/Student/StudentCalendar.jsx">frontend/src/pages/Student/StudentCalendar.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Student/StudentHome.jsx.html" data-path="frontend/src/pages/Student/StudentHome.jsx">frontend/src/pages/Student/StudentHome.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Teacher/TeacherHome.jsx.html" data-path="frontend/src/pages/Teacher/TeacherHome.jsx">frontend/src/pages/Teacher/TeacherHome.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Teacher/TeacherSchedule.jsx.html" data-path="frontend/src/pages/Teacher/TeacherSchedule.jsx">frontend/src/pages/Teacher/TeacherSchedule.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Teacher/TeacherSchool.jsx.html" data-path="frontend/src/pages/Teacher/TeacherSchool.jsx">frontend/src/pages/Teacher/TeacherSchool.jsx</a></li>
+<li><a href="../source/frontend/src/pages/Unauthorized/Unauthorized.jsx.html" data-path="frontend/src/pages/Unauthorized/Unauthorized.jsx">frontend/src/pages/Unauthorized/Unauthorized.jsx</a></li>
+<li><a href="../source/frontend/src/router/AppRouter.jsx.html" data-path="frontend/src/router/AppRouter.jsx">frontend/src/router/AppRouter.jsx</a></li>
+<li><a href="../source/frontend/src/router/ProtectedRoute.jsx.html" data-path="frontend/src/router/ProtectedRoute.jsx">frontend/src/router/ProtectedRoute.jsx</a></li>
+<li><a href="../source/frontend/src/router/RoleRedirect.jsx.html" data-path="frontend/src/router/RoleRedirect.jsx">frontend/src/router/RoleRedirect.jsx</a></li>
+<li><a href="../source/frontend/src/styles/global.css.html" data-path="frontend/src/styles/global.css">frontend/src/styles/global.css</a></li>
+<li><a href="../source/frontend/src/styles/login.css.html" data-path="frontend/src/styles/login.css">frontend/src/styles/login.css</a></li>
+<li><a href="../source/frontend/src/styles/sidebar.css.html" data-path="frontend/src/styles/sidebar.css">frontend/src/styles/sidebar.css</a></li>
+<li><a href="../source/frontend/src/theme.jsx.html" data-path="frontend/src/theme.jsx">frontend/src/theme.jsx</a></li>
+</ul>
+<h2>sql</h2><ul>
+<li><a href="../source/sql/create-tables.sql.html" data-path="sql/create-tables.sql">sql/create-tables.sql</a></li>
+<li><a href="../source/sql/insert-demo-data.sql.html" data-path="sql/insert-demo-data.sql">sql/insert-demo-data.sql</a></li>
+</ul></div></div>
+</div>
+<script>
+const links = document.querySelectorAll('.tree a');
+const header = document.getElementById('file-header');
+const codeWrap = document.getElementById('code-wrap');
+links.forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    links.forEach(l => l.classList.remove('active'));
+    a.classList.add('active');
+    header.innerHTML = '<span>' + a.dataset.path + '</span>';
+    fetch(a.href).then(r=>r.text()).then(t=>{
+      const m = t.match(/<div id="content">([\s\S]*)<\/div>/);
+      codeWrap.innerHTML = m ? m[1] : t;
+    });
+  });
+});
+</script>
+</body>
+</html>

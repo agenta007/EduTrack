@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduTrack — Technical Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0a0c10;
+    --bg2:       #0f1218;
+    --bg3:       #161b24;
+    --border:    #1e2530;
+    --border2:   #252d3a;
+    --text:      #c8d0dc;
+    --text-dim:  #5a6478;
+    --text-mid:  #8892a4;
+    --accent:    #3d9aff;
+    --accent2:   #00d4aa;
+    --heading:   #eef0f4;
+
+    --role-admin:      #ff4d6d;
+    --role-admin-bg:   rgba(255,77,109,0.12);
+    --role-head:       #a855f7;
+    --role-head-bg:    rgba(168,85,247,0.12);
+    --role-teacher:    #3d9aff;
+    --role-teacher-bg: rgba(61,154,255,0.12);
+    --role-student:    #22c55e;
+    --role-student-bg: rgba(34,197,94,0.12);
+    --role-parent:     #f97316;
+    --role-parent-bg:  rgba(249,115,22,0.12);
+    --role-public:     #64748b;
+    --role-public-bg:  rgba(100,116,139,0.12);
+    --role-all:        #00d4aa;
+    --role-all-bg:     rgba(0,212,170,0.12);
+
+    --method-get:    #22c55e;
+    --method-post:   #3d9aff;
+    --method-put:    #f97316;
+    --method-patch:  #a855f7;
+    --method-delete: #ff4d6d;
+
+    --sidebar-w: 280px;
+    --header-h:  56px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 15px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ── TOP HEADER ── */
+  .top-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--header-h);
+    background: rgba(10,12,16,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 24px;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: 1.05rem; color: var(--heading);
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #3d9aff 0%, #00d4aa 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .header-right {
+    margin-left: auto; display: flex; align-items: center; gap: 12px;
+  }
+
+  .version-badge {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    color: var(--text-dim); background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  .hamburger {
+    display: none; background: none; border: none;
+    color: var(--text); cursor: pointer; padding: 4px;
+    flex-direction: column; gap: 5px;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--text-mid); border-radius: 2px;
+    transition: all 0.25s;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed; top: var(--header-h); left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 90;
+    display: flex; flex-direction: column;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-search {
+    padding: 16px 16px 8px;
+    position: sticky; top: 0;
+    background: var(--bg2);
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--text-dim); font-size: 13px; pointer-events: none;
+  }
+
+  .sidebar-search input {
+    width: 100%; padding: 7px 10px 7px 30px;
+    background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 6px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .sidebar-search input::placeholder { color: var(--text-dim); }
+  .sidebar-search input:focus { border-color: var(--accent); }
+
+  .toc {
+    padding: 12px 8px 24px;
+    flex: 1;
+  }
+
+  .toc-section {
+    margin-bottom: 2px;
+  }
+
+  .toc-item {
+    display: block; padding: 6px 12px;
+    color: var(--text-mid); text-decoration: none;
+    font-size: 0.82rem; border-radius: 6px;
+    transition: all 0.15s; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    border-left: 2px solid transparent;
+  }
+  .toc-item:hover { color: var(--text); background: var(--bg3); }
+  .toc-item.active {
+    color: var(--accent); background: rgba(61,154,255,0.08);
+    border-left-color: var(--accent);
+  }
+  .toc-item.sub {
+    padding-left: 24px; font-size: 0.78rem; color: var(--text-dim);
+  }
+  .toc-item.sub:hover { color: var(--text-mid); }
+  .toc-item.sub.active { color: var(--accent); border-left-color: var(--accent); }
+
+  .toc-group-label {
+    padding: 8px 12px 4px;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    padding-top: var(--header-h);
+    min-height: 100vh;
+  }
+
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 48px 80px;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    margin-bottom: 72px;
+    opacity: 0; transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section.visible { opacity: 1; transform: none; }
+
+  .section-anchor { position: relative; top: -80px; display: block; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: var(--accent); background: rgba(61,154,255,0.1);
+    border: 1px solid rgba(61,154,255,0.2);
+    border-radius: 4px; padding: 2px 8px;
+    flex-shrink: 0;
+  }
+
+  h2 {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 1.55rem; color: var(--heading);
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    font-family: 'Syne', sans-serif; font-weight: 600;
+    font-size: 1.05rem; color: var(--heading);
+    margin: 32px 0 14px;
+    letter-spacing: -0.01em;
+  }
+
+  h4 {
+    font-size: 0.85rem; font-weight: 500;
+    color: var(--text-mid); text-transform: uppercase;
+    letter-spacing: 0.06em; margin: 24px 0 10px;
+  }
+
+  p { margin-bottom: 14px; color: var(--text); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ul, ol { margin: 8px 0 14px 20px; }
+  li { margin-bottom: 4px; }
+
+  code {
+    font-family: 'DM Mono', monospace; font-size: 0.83em;
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 5px; color: var(--accent2);
+  }
+
+  strong { color: var(--heading); font-weight: 500; }
+  em { color: var(--text-mid); font-style: italic; }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 10px 16px;
+    background: rgba(61,154,255,0.05);
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+    color: var(--text-mid);
+    font-size: 0.9rem;
+  }
+
+  /* ── CODE BLOCKS ── */
+  .code-block {
+    position: relative; margin: 16px 0;
+    border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-lang {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em;
+  }
+
+  .copy-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 0.72rem;
+    color: var(--text-dim); background: none;
+    border: 1px solid var(--border2); border-radius: 4px;
+    padding: 2px 10px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--accent2); border-color: var(--accent2); }
+
+  pre {
+    margin: 0; padding: 20px;
+    background: var(--bg2);
+    overflow-x: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: #abb2bf;
+  }
+
+  pre .kw  { color: #c678dd; }
+  pre .str { color: #98c379; }
+  pre .cm  { color: #5c6370; font-style: italic; }
+  pre .num { color: #d19a66; }
+  pre .fn  { color: #61afef; }
+  pre .var { color: #e06c75; }
+  pre .op  { color: #56b6c2; }
+
+  /* ── TABLES ── */
+  .table-wrap {
+    overflow-x: auto; margin: 16px 0;
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 10px 14px; text-align: left;
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    font-weight: 500; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+  tbody tr:hover { background: rgba(61,154,255,0.04); }
+
+  td {
+    padding: 9px 14px; vertical-align: top;
+    color: var(--text);
+  }
+
+  td code { font-size: 0.8em; }
+
+  /* ── METHOD BADGES ── */
+  .method {
+    font-family: 'DM Mono', monospace; font-size: 0.7rem;
+    font-weight: 500; padding: 2px 7px; border-radius: 4px;
+    display: inline-block; letter-spacing: 0.03em;
+  }
+  .method-GET    { color: var(--method-get);    background: rgba(34,197,94,0.1); }
+  .method-POST   { color: var(--method-post);   background: rgba(61,154,255,0.1); }
+  .method-PUT    { color: var(--method-put);    background: rgba(249,115,22,0.1); }
+  .method-PATCH  { color: var(--method-patch);  background: rgba(168,85,247,0.1); }
+  .method-DELETE { color: var(--method-delete); background: rgba(255,77,109,0.1); }
+
+  /* ── ROLE BADGES ── */
+  .role {
+    display: inline-block; font-family: 'DM Mono', monospace;
+    font-size: 0.68rem; font-weight: 500;
+    padding: 1px 6px; border-radius: 4px;
+    margin: 1px; white-space: nowrap;
+  }
+  .role-ADMIN      { color: var(--role-admin);   background: var(--role-admin-bg); }
+  .role-HEADMASTER { color: var(--role-head);    background: var(--role-head-bg); }
+  .role-TEACHER    { color: var(--role-teacher); background: var(--role-teacher-bg); }
+  .role-STUDENT    { color: var(--role-student); background: var(--role-student-bg); }
+  .role-PARENT     { color: var(--role-parent);  background: var(--role-parent-bg); }
+  .role-Public     { color: var(--role-public);  background: var(--role-public-bg); }
+  .role-All        { color: var(--role-all);     background: var(--role-all-bg); }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 12px; border-radius: 6px;
+    margin-bottom: 4px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .checklist li:hover { background: var(--bg3); }
+  .checklist li.done { color: var(--text-dim); }
+  .checklist li.done .check-label { text-decoration: line-through; }
+
+  .check-box {
+    width: 18px; height: 18px; border-radius: 4px;
+    border: 1.5px solid var(--border2); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 2px; transition: all 0.15s;
+  }
+  .done .check-box {
+    background: var(--accent2); border-color: var(--accent2);
+  }
+  .check-box svg { display: none; }
+  .done .check-box svg { display: block; }
+
+  /* ── INFO CARDS ── */
+  .info-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin: 16px 0;
+  }
+
+  .info-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+
+  .info-card-label {
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+
+  .info-card-value {
+    font-family: 'DM Mono', monospace; font-size: 0.82rem;
+    color: var(--text); line-height: 1.5;
+  }
+
+  /* ── FLOW DIAGRAM CARDS ── */
+  .flow-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; margin: 16px 0;
+  }
+
+  .flow-title {
+    padding: 10px 16px;
+    background: var(--bg3); border-bottom: 1px solid var(--border);
+    font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 600;
+    color: var(--heading); display: flex; align-items: center; gap: 8px;
+  }
+
+  .flow-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent2);
+  }
+
+  /* ── ROLE SYSTEM CARDS ── */
+  .role-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px; margin: 16px 0;
+  }
+
+  .role-card {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px;
+    border-top: 3px solid;
+  }
+  .role-card.admin      { border-top-color: var(--role-admin); }
+  .role-card.headmaster { border-top-color: var(--role-head); }
+  .role-card.teacher    { border-top-color: var(--role-teacher); }
+  .role-card.student    { border-top-color: var(--role-student); }
+  .role-card.parent     { border-top-color: var(--role-parent); }
+
+  .role-card-name {
+    font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .role-card.admin      .role-card-name { color: var(--role-admin); }
+  .role-card.headmaster .role-card-name { color: var(--role-head); }
+  .role-card.teacher    .role-card-name { color: var(--role-teacher); }
+  .role-card.student    .role-card-name { color: var(--role-student); }
+  .role-card.parent     .role-card-name { color: var(--role-parent); }
+
+  .role-card-desc {
+    font-size: 0.78rem; color: var(--text-mid); line-height: 1.5;
+  }
+
+  /* ── API GROUP HEADERS ── */
+  .api-group {
+    margin-top: 36px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .api-group-path {
+    font-family: 'DM Mono', monospace; font-size: 0.9rem;
+    color: var(--accent2);
+  }
+
+  .api-group-line {
+    flex: 1; height: 1px; background: var(--border);
+  }
+
+  .api-note {
+    font-size: 0.8rem; color: var(--text-dim);
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; margin: 8px 0 14px;
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .api-note::before { content: 'ℹ'; color: var(--accent); flex-shrink: 0; }
+
+  /* ── LIFECYCLE STEPS ── */
+  .steps {
+    position: relative; margin: 16px 0;
+  }
+  .steps::before {
+    content: ''; position: absolute; left: 20px; top: 0; bottom: 0;
+    width: 1px; background: var(--border);
+  }
+
+  .step {
+    display: flex; gap: 16px; margin-bottom: 14px;
+    position: relative;
+  }
+
+  .step-num {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background: var(--bg3); border: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace; font-size: 0.78rem;
+    color: var(--accent); z-index: 1;
+  }
+
+  .step-body {
+    padding-top: 8px; flex: 1;
+  }
+
+  .step-title {
+    font-size: 0.88rem; font-weight: 500; color: var(--heading);
+    margin-bottom: 4px;
+  }
+
+  .step-desc {
+    font-size: 0.82rem; color: var(--text-mid); line-height: 1.5;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .sidebar {
+      transform: translateX(-100%);
+    }
+    .sidebar.open {
+      transform: translateX(0);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.5);
+    }
+    .main { margin-left: 0; }
+    .content { padding: 32px 20px 60px; }
+    .hamburger { display: flex; }
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 85;
+    }
+    .overlay.show { display: block; }
+  }
+
+  /* ── HIDDEN TOC items ── */
+  .toc-item.hidden { display: none; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px; background: var(--border);
+    margin: 48px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<header class="top-header">
+  <a href="#" class="logo">
+    <div class="logo-icon">📚</div>
+    Edu<span>Track</span>
+  </a>
+  <div class="version-badge">Spring Boot 3.5 · Java 25 · React 18</div>
+  <div class="header-right">
+    <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- OVERLAY (mobile) -->
+<div class="overlay" id="overlay"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-search">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="toc-search" placeholder="Filter sections…" autocomplete="off">
+    </div>
+  </div>
+  <div class="toc" id="toc">
+    <div class="toc-group-label">Overview</div>
+    <a class="toc-item" href="#overview" data-section="overview">Project Overview</a>
+    <a class="toc-item" href="#architecture" data-section="architecture">Architecture & Layers</a>
+
+    <div class="toc-group-label">Security</div>
+    <a class="toc-item" href="#jwt" data-section="jwt">JWT Auth Flow</a>
+    <a class="toc-item sub" href="#jwt-login">↳ Login</a>
+    <a class="toc-item sub" href="#jwt-request">↳ Authenticated Request</a>
+    <a class="toc-item sub" href="#jwt-refresh">↳ Token Refresh</a>
+    <a class="toc-item sub" href="#jwt-claims">↳ Token Claims</a>
+    <a class="toc-item" href="#security" data-section="security">Security Config</a>
+    <a class="toc-item" href="#roles" data-section="roles">Role System</a>
+
+    <div class="toc-group-label">API Reference</div>
+    <a class="toc-item" href="#api" data-section="api">REST API Overview</a>
+    <a class="toc-item sub" href="#api-auth">↳ /auth</a>
+    <a class="toc-item sub" href="#api-profile">↳ /api/profile</a>
+    <a class="toc-item sub" href="#api-schools">↳ /api/schools</a>
+    <a class="toc-item sub" href="#api-users">↳ /api/users</a>
+    <a class="toc-item sub" href="#api-teachers">↳ /api/teachers</a>
+    <a class="toc-item sub" href="#api-students">↳ /api/students</a>
+    <a class="toc-item sub" href="#api-parents">↳ /api/parents</a>
+    <a class="toc-item sub" href="#api-classes">↳ /api/classes</a>
+    <a class="toc-item sub" href="#api-schedules">↳ /api/schedules</a>
+    <a class="toc-item sub" href="#api-grades">↳ /api/grades</a>
+    <a class="toc-item sub" href="#api-absences">↳ /api/absences</a>
+    <a class="toc-item sub" href="#api-complaints">↳ /api/complaints</a>
+    <a class="toc-item sub" href="#api-subjects">↳ /api/subjects</a>
+
+    <div class="toc-group-label">Frontend</div>
+    <a class="toc-item" href="#frontend" data-section="frontend">Frontend Routing</a>
+
+    <div class="toc-group-label">Internals</div>
+    <a class="toc-item" href="#lifecycle" data-section="lifecycle">Request Lifecycle</a>
+    <a class="toc-item" href="#config" data-section="config">Configuration</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+<div class="content">
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 1. OVERVIEW -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-overview">
+    <span class="section-anchor" id="overview"></span>
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2>Project Overview</h2>
+    </div>
+
+    <p>EduTrack is a full-stack school management system (e-journal) designed for the Bulgarian education system. It supports multiple schools, each with its own headmaster, teachers, students, and parents. Data is organised by class, subject, term, and school year.</p>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">Backend</div>
+        <div class="info-card-value">Java 25<br>Spring Boot 3.5<br>Spring Security<br>Spring Data JPA</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Database</div>
+        <div class="info-card-value">PostgreSQL<br><br>JPA / Hibernate<br>ddl-auto: update</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Auth</div>
+        <div class="info-card-value">JWT (JJWT 0.12)<br>HttpOnly refresh cookie<br>BCrypt passwords<br>Stateless sessions</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Frontend</div>
+        <div class="info-card-value">React 18 + Vite<br>Material UI<br>React Router<br>i18next</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">API Docs</div>
+        <div class="info-card-value">SpringDoc OpenAPI<br><code>/swagger-ui.html</code></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 2. ARCHITECTURE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-architecture">
+    <span class="section-anchor" id="architecture"></span>
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2>Architecture &amp; Layers</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">system diagram</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre>┌──────────────────────────────────────────┐
+│            React Frontend  :5173         │
+│  Router · MUI · i18next · Axios          │
+└──────────────────┬───────────────────────┘
+                   │ HTTP / JSON
+┌──────────────────▼───────────────────────┐
+│          Spring Boot Backend  :8080      │
+│                                          │
+│  Filter Chain                            │
+│    1. RequestLoggingFilter               │
+│    2. LocalhostAdminFilter  (dev only)   │
+│    3. JwtAuthenticationFilter            │
+│                                          │
+│  Controllers  (@RestController)          │
+│    /auth  /api/schools  /api/grades      │
+│    /api/users  /api/schedules  …         │
+│                                          │
+│  Services  (@Service)                    │
+│    Business logic · ownership checks     │
+│    DTO mapping                           │
+│                                          │
+│  Repositories  (Spring Data JPA)         │
+│    JPA entities  →  PostgreSQL           │
+└──────────────────────────────────────────┘</pre>
+    </div>
+
+    <h3>Package Layout</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">java</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre>com.edutrack.e_journal
+├── config/        <span class="cm">// SecurityConfig, OpenApiConfig</span>
+├── controller/    <span class="cm">// One controller per domain</span>
+├── dto/           <span class="cm">// Request / response objects (Lombok)</span>
+├── entity/        <span class="cm">// JPA entities (@Data / @Builder)</span>
+├── repository/    <span class="cm">// Spring Data JPA interfaces</span>
+├── security/      <span class="cm">// JWT utilities, filters, UserDetailsService</span>
+└── service/       <span class="cm">// Business logic</span></pre>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 3. JWT -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-jwt">
+    <span class="section-anchor" id="jwt"></span>
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2>JWT Authentication Flow</h2>
+    </div>
+
+    <span class="section-anchor" id="jwt-login"></span>
+    <div class="flow-card">
+      <div class="flow-title"><div class="flow-dot"></div>Login</div>
+      <pre>Client                              Backend
+  │                                   │
+  │  POST /auth/login                 │
+  │  { email, password }              │
+  │──────────────────────────────────▶│
+  │                                   │  AuthenticationManager.authenticate()
+  │                                   │  BCrypt password check
+  │                                   │  generateAccessToken()   24 h
+  │                                   │  generateRefreshToken()   7 days
+  │                                   │  Set-Cookie: refreshToken
+  │                                   │    (HttpOnly, path=/auth)
+  │◀──────────────────────────────────│
+  │  { accessToken: "eyJ…" }          │</pre>
+    </div>
+
+    <span class="section-anchor" id="jwt-request"></span>
+    <div class="flow-card">
+      <div class="flow-title"><div class="flow-dot"></div>Authenticated Request</div>
+      <pre>Client                              Backend
+  │                                   │
+  │  GET /api/profile                 │
+  │  Authorization: Bearer eyJ…       │
+  │──────────────────────────────────▶│
+  │                                   │  JwtAuthenticationFilter:
+  │                                   │    1. Extract Authorization header
+  │                                   │    2. validateToken() (sig + expiry)
+  │                                   │    3. getEmailFromToken()
+  │                                   │    4. CustomUserDetailsService
+  │                                   │         .loadUserByUsername(email)
+  │                                   │    5. Set SecurityContext
+  │                                   │  @PreAuthorize role check
+  │◀──────────────────────────────────│
+  │  200 { profile data }             │</pre>
+    </div>
+
+    <span class="section-anchor" id="jwt-refresh"></span>
+    <div class="flow-card">
+      <div class="flow-title"><div class="flow-dot"></div>Token Refresh</div>
+      <pre>Client                              Backend
+  │                                   │
+  │  POST /auth/refresh               │
+  │  Cookie: refreshToken=eyJ…        │
+  │──────────────────────────────────▶│
+  │                                   │  Read cookie → validate
+  │                                   │  Extract email → load user
+  │                                   │  generateAccessToken()
+  │◀──────────────────────────────────│
+  │  { accessToken: "eyJ…" }          │</pre>
+    </div>
+
+    <span class="section-anchor" id="jwt-claims"></span>
+    <h3>Access Token Claims</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>sub</code></td><td>User's email address</td></tr>
+          <tr><td><code>id</code></td><td>User's database primary key (Long)</td></tr>
+          <tr><td><code>email</code></td><td>User's email address</td></tr>
+          <tr><td><code>role</code></td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-STUDENT">STUDENT</span> <span class="role role-PARENT">PARENT</span></td></tr>
+          <tr><td><code>name</code></td><td>firstName + " " + lastName</td></tr>
+          <tr><td><code>iat</code></td><td>Issued-at (epoch seconds)</td></tr>
+          <tr><td><code>exp</code></td><td>iat + jwtExpirationInMs (default 24 h)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.85rem; color:var(--text-mid);">Refresh token contains only <code>sub</code> + <code>iat</code> + <code>exp</code> (7 days), stored as HttpOnly cookie at path <code>/auth</code>.</p>
+
+    <h3>Frontend Token Handling</h3>
+    <ul>
+      <li>Access token stored in <code>localStorage</code>, attached to every request via Axios interceptor.</li>
+      <li>On 401 response, interceptor calls <code>POST /auth/refresh</code> using the HttpOnly cookie, updates the stored token, and retries the original request.</li>
+      <li>On logout or refresh failure, <code>localStorage</code> is cleared and the user is redirected to <code>/login</code>.</li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 4. SECURITY -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-security">
+    <span class="section-anchor" id="security"></span>
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2>Security Configuration</h2>
+    </div>
+
+    <h3>Filter Chain Order</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">RequestLoggingFilter</div>
+          <div class="step-desc">Logs every request — method, path, status, duration, IP — to <code>requests.log</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">LocalhostAdminFilter <em style="font-size:0.75rem">(dev only)</em></div>
+          <div class="step-desc">When <code>app.security.allow-localhost=true</code>, any request from <code>127.0.0.1</code> / <code>::1</code> without an Authorization header is automatically authenticated with all five roles. <strong>Must be disabled in production.</strong></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">JwtAuthenticationFilter</div>
+          <div class="step-desc">Validates the Bearer token signature and expiry, then populates <code>SecurityContext</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Standard Spring Security filters</div>
+          <div class="step-desc">Authorization, CORS, CSRF (disabled — stateless API), session management (STATELESS).</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Public Endpoints</h3>
+    <p>No authentication required:</p>
+    <ul>
+      <li><code>POST /auth/login</code>, <code>POST /auth/refresh</code>, <code>POST /auth/logout</code></li>
+      <li><code>GET /swagger-ui/**</code>, <code>/swagger-ui.html</code>, <code>/v3/api-docs/**</code></li>
+    </ul>
+    <p>All other paths require a valid JWT.</p>
+
+    <h3>CORS</h3>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-card-label">Allowed Origin</div>
+        <div class="info-card-value"><code>http://localhost:5173</code></div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Allowed Methods</div>
+        <div class="info-card-value">GET · POST · PUT · DELETE · OPTIONS</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Credentials</div>
+        <div class="info-card-value">Enabled (required for refresh cookie)</div>
+      </div>
+    </div>
+    <blockquote>For production, update <code>corsConfigurationSource()</code> in <code>SecurityConfig</code> to allow the real frontend domain.</blockquote>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 5. ROLES -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-roles">
+    <span class="section-anchor" id="roles"></span>
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2>Role System</h2>
+    </div>
+
+    <div class="role-cards">
+      <div class="role-card admin">
+        <div class="role-card-name">ADMIN</div>
+        <div class="role-card-desc">Global superuser. Full access to all schools and all data.</div>
+      </div>
+      <div class="role-card headmaster">
+        <div class="role-card-name">HEADMASTER</div>
+        <div class="role-card-desc">Manages one school. Hires/fires staff, configures terms and schedules.</div>
+      </div>
+      <div class="role-card teacher">
+        <div class="role-card-name">TEACHER</div>
+        <div class="role-card-desc">Records grades, absences, complaints for assigned classes.</div>
+      </div>
+      <div class="role-card student">
+        <div class="role-card-name">STUDENT</div>
+        <div class="role-card-desc">Read-only access to own grades, absences, and complaints.</div>
+      </div>
+      <div class="role-card parent">
+        <div class="role-card-name">PARENT</div>
+        <div class="role-card-desc">Read-only access to their child's grades, absences, and complaints.</div>
+      </div>
+    </div>
+
+    <h3>Enforcement Levels</h3>
+    <ol>
+      <li><strong>Method-level</strong> — <code>@PreAuthorize("hasRole('ADMIN') or hasRole('HEADMASTER')")</code> on controller methods.</li>
+      <li><strong>Service-level</strong> — ownership checks (e.g. a HEADMASTER may only modify their own school; a TEACHER may only add grades to classes assigned to them).</li>
+    </ol>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 6. API REFERENCE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-api">
+    <span class="section-anchor" id="api"></span>
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2>REST API Reference</h2>
+    </div>
+    <p>Base URL: <code>http://localhost:8080</code> &nbsp;·&nbsp; Full interactive docs: <code>/swagger-ui.html</code></p>
+
+    <!-- AUTH -->
+    <span class="section-anchor" id="api-auth"></span>
+    <div class="api-group">
+      <span class="api-group-path">/auth</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Auth</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/auth/login</code></td><td>Login. Returns access token; sets 7-day refresh cookie.</td><td><span class="role role-Public">Public</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/auth/refresh</code></td><td>Exchange refresh cookie for new access token.</td><td><span class="role role-Public">Public</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/auth/logout</code></td><td>Clear refresh cookie.</td><td><span class="role role-Public">Public</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-mid);">Request: <code>{ email, password }</code> &nbsp;·&nbsp; Response: <code>{ accessToken }</code></p>
+
+    <!-- PROFILE -->
+    <span class="section-anchor" id="api-profile"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/profile</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/profile</code></td><td>Get own full profile + school info</td><td><span class="role role-All">All authenticated</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/profile/password</code></td><td>Change password (current password required)</td><td><span class="role role-All">All authenticated</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/profile/picture</code></td><td>Upload profile picture (multipart)</td><td><span class="role role-All">All authenticated</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/profile/picture</code></td><td>Remove profile picture</td><td><span class="role role-All">All authenticated</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/profile/bio</code></td><td>Set or clear bio text (max 500 chars)</td><td><span class="role role-All">All authenticated</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SCHOOLS -->
+    <span class="section-anchor" id="api-schools"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/schools</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schools</code></td><td>List all schools</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schools/{id}</code></td><td>Get school by ID</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/schools</code></td><td>Create school</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/schools/{id}</code></td><td>Full update (name, address, type, headmaster)</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-PATCH">PATCH</span></td><td><code>/api/schools/{id}/info</code></td><td>Update name / address only</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/schools/{id}</code></td><td>Delete school</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schools/{id}/profiles</code></td><td>List specialisation profiles</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/schools/{id}/profiles</code></td><td>Add specialisation profile</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/schools/profiles/{profileId}</code></td><td>Remove specialisation profile</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schools/{id}/schedule</code></td><td>Get ordered daily bell schedule</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/schools/{id}/schedule</code></td><td>Add bell-schedule entry</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/schools/schedule/{entryId}</code></td><td>Update bell-schedule entry</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/schools/schedule/{entryId}</code></td><td>Delete bell-schedule entry</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schools/{id}/term-config</code></td><td>Get term date configuration</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/schools/{id}/term-config</code></td><td>Set term dates</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/schools/{id}/student-limit</code></td><td>Set maximum student count</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="api-note">HEADMASTER endpoints always verify the school belongs to the authenticated headmaster.</div>
+
+    <!-- USERS -->
+    <span class="section-anchor" id="api-users"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/users</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users</code></td><td>List all users</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users/teachers/school/{id}</code></td><td>Teachers at school (id + name)</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users/students/school/{id}</code></td><td>Students at school (full profiles)</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users/parents/school/{id}</code></td><td>Parents at school</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users/headmasters</code></td><td>All headmasters (id + name)</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/users/{id}/picture</code></td><td>Raw profile picture bytes</td><td><span class="role role-Public">Public</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/users</code></td><td>Create user account</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/users/{id}</code></td><td>Update user (name, email, role, password)</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/users/{id}</code></td><td>Delete user</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TEACHERS -->
+    <span class="section-anchor" id="api-teachers"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/teachers</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/teachers/school/{id}</code></td><td>Teachers with salary + qualifications</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/teachers/available</code></td><td>Unhired TEACHER-role users</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/teachers/create-and-hire</code></td><td>Create user + hire in one step</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/teachers/{userId}/hire</code></td><td>Hire existing user as teacher</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/teachers/{teacherId}/fire</code></td><td>Fire teacher from school</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/teachers/{teacherId}/salary</code></td><td>Set monthly salary</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/teachers/{teacherId}/qualifications</code></td><td>Set subject qualifications</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STUDENTS -->
+    <span class="section-anchor" id="api-students"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/students</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/students/available</code></td><td>Unenrolled STUDENT-role users</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/students/{userId}/enroll</code></td><td>Enroll student in school</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/students/{studentId}/expel</code></td><td>Expel student from school</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PARENTS -->
+    <span class="section-anchor" id="api-parents"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/parents</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/parents/school/{id}</code></td><td>Parents at school</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/parents/available</code></td><td>All PARENT-role users</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/parents/{parentId}/link/{studentId}</code></td><td>Link parent to student</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/parents/{parentId}/unlink/{studentId}</code></td><td>Unlink parent from student</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/parents/{parentId}</code></td><td>Update parent name / email</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CLASSES -->
+    <span class="section-anchor" id="api-classes"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/classes</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/classes</code></td><td>List all classes</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/classes/school/{id}</code></td><td>Classes at school</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/classes/{id}</code></td><td>Get class details</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/classes/{id}/students</code></td><td>Students in class (id + name)</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SCHEDULES -->
+    <span class="section-anchor" id="api-schedules"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/schedules</span>
+      <div class="api-group-line"></div>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-mid);">Each entry = one subject taught by one teacher to one class on a given day of week in a given term.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schedules/class/{classId}</code></td><td>Curriculum for class</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schedules/teacher/{teacherId}</code></td><td>Curriculum for teacher</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/schedules/teacher/me</code></td><td>Own curriculum</td><td><span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/schedules</code></td><td>Add curriculum entry</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-PATCH">PATCH</span></td><td><code>/api/schedules/{id}/type</code></td><td>Change lecture type (STANDARD / SIP / EXTRACURRICULAR)</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/schedules/{id}</code></td><td>Remove curriculum entry</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- GRADES -->
+    <span class="section-anchor" id="api-grades"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/grades</span>
+      <div class="api-group-line"></div>
+    </div>
+    <p style="font-size:0.82rem; color:var(--text-mid);">Bulgarian grading scale: 2 · 2.5 · 3 · 3.5 · 4 · 4.5 · 5 · 5.5 · 6</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/grades/class/{classId}</code></td><td>All grades for a class</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/grades/student/me</code></td><td>Own grades</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/grades/student/{studentId}</code></td><td>Grades for a specific student</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/grades</code></td><td>Add grade</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/grades/{id}</code></td><td>Remove grade</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ABSENCES -->
+    <span class="section-anchor" id="api-absences"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/absences</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/absences/class/{classId}</code></td><td>All absences for a class</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/absences/student/me</code></td><td>Own absences</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/absences/student/{studentId}</code></td><td>Absences for a student</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/absences</code></td><td>Record absence</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/absences/{id}/excuse</code></td><td>Toggle excused / unexcused</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/absences/{id}</code></td><td>Delete absence record</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- COMPLAINTS -->
+    <span class="section-anchor" id="api-complaints"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/complaints</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/complaints/class/{classId}</code></td><td>All complaints for a class</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/complaints/student/me</code></td><td>Own complaints</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/complaints/student/{studentId}</code></td><td>Complaints for a student</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/complaints</code></td><td>File complaint</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/complaints/{id}</code></td><td>Delete complaint</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SUBJECTS -->
+    <span class="section-anchor" id="api-subjects"></span>
+    <div class="api-group">
+      <span class="api-group-path">/api/subjects</span>
+      <div class="api-group-line"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Roles</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-GET">GET</span></td><td><code>/api/subjects</code></td><td>List all subjects</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><span class="method method-POST">POST</span></td><td><code>/api/subjects</code></td><td>Create subject</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-PUT">PUT</span></td><td><code>/api/subjects/{id}</code></td><td>Rename subject</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><span class="method method-DELETE">DELETE</span></td><td><code>/api/subjects/{id}</code></td><td>Delete subject</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 7. FRONTEND ROUTING -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-frontend">
+    <span class="section-anchor" id="frontend"></span>
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2>Frontend Routing</h2>
+    </div>
+
+    <p>On app load, <code>AuthProvider</code> decodes the stored access token from <code>localStorage</code> and populates the auth context (id, email, role, name). Every protected route is wrapped in <code>ProtectedRoute</code>, which redirects to <code>/login</code> if unauthenticated or <code>/unauthorized</code> if the role is not allowed.</p>
+
+    <h3>Role Redirects from <code>/</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Redirects to</th></tr></thead>
+        <tbody>
+          <tr><td><span class="role role-ADMIN">ADMIN</span></td><td><code>/admin</code></td></tr>
+          <tr><td><span class="role role-HEADMASTER">HEADMASTER</span></td><td><code>/headmaster</code></td></tr>
+          <tr><td><span class="role role-TEACHER">TEACHER</span></td><td><code>/teacher</code></td></tr>
+          <tr><td><span class="role role-STUDENT">STUDENT</span></td><td><code>/student</code></td></tr>
+          <tr><td><span class="role role-PARENT">PARENT</span></td><td><code>/parent</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>All Routes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Path</th><th>Component</th><th>Allowed Roles</th></tr></thead>
+        <tbody>
+          <tr><td><code>/login</code></td><td>Login</td><td><span class="role role-Public">Public</span></td></tr>
+          <tr><td><code>/unauthorized</code></td><td>Unauthorized</td><td><span class="role role-Public">Public</span></td></tr>
+          <tr><td><code>/profile</code></td><td>Profile</td><td><span class="role role-All">All authenticated</span></td></tr>
+          <tr><td><code>/admin</code></td><td>AdminHome</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/admin/manageUsers</code></td><td>AdminManageUsers</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/admin/viewSchools</code></td><td>ViewSchools</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/admin/viewSubjects</code></td><td>ViewSubjects</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/headmaster</code></td><td>HeadmasterHome</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/headmaster/mySchool</code></td><td>HeadmasterSchool</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/headmaster/viewParents</code></td><td>ViewParents</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/headmaster/viewStudents</code></td><td>ViewStudents</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/headmaster/viewTeachers</code></td><td>ViewTeachers</td><td><span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/teacher</code></td><td>TeacherHome</td><td><span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/teacher/school</code></td><td>TeacherSchool</td><td><span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/teacher/teacherSchedule/:teacherId</code></td><td>TeacherSchedule</td><td><span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/student</code></td><td>StudentHome</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/parent</code></td><td>ParentHome</td><td><span class="role role-PARENT">PARENT</span></td></tr>
+          <tr><td><code>/schedule/:classId</code></td><td>Schedule</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/grades</code></td><td>AllSchoolsGrades</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/grades/school/:schoolId</code></td><td>SchoolGrades</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/grades/class/:classId</code></td><td>ClassGrades</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/grades/student/:studentId</code></td><td>StudentGrades</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/grades/me</code></td><td>StudentGrades</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/absences</code></td><td>AllSchoolsAbsences</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/absences/school/:schoolId</code></td><td>SchoolAbsences</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/absences/class/:classId</code></td><td>ClassAbsences</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/absences/student/:studentId</code></td><td>StudentAbsences</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/absences/me</code></td><td>StudentAbsences</td><td><span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/complaints</code></td><td>AllSchoolsComplaints</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/complaints/school/:schoolId</code></td><td>SchoolComplaints</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/complaints/class/:classId</code></td><td>ClassComplaints</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/complaints/student/:studentId</code></td><td>StudentComplaints</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span> <span class="role role-PARENT">PARENT</span> <span class="role role-STUDENT">STUDENT</span></td></tr>
+          <tr><td><code>/statistics/school/:schoolId</code></td><td>SchoolStatistics</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/statistics/subject/:subjectId</code></td><td>SubjectStatistics</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/statistics/teacher/:teacherId</code></td><td>TeacherStatistics</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/select/school/statistics</code></td><td>SelectSchool…</td><td><span class="role role-ADMIN">ADMIN</span></td></tr>
+          <tr><td><code>/select/teacher/statistics</code></td><td>SelectTeacher…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/select/subject/statistics</code></td><td>SelectSubject…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/select/class/schedule</code></td><td>SelectClass…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span></td></tr>
+          <tr><td><code>/select/class/grades</code></td><td>SelectClass…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/select/class/absences</code></td><td>SelectClass…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-HEADMASTER">HEADMASTER</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+          <tr><td><code>/select/class/complaints</code></td><td>SelectClass…</td><td><span class="role role-ADMIN">ADMIN</span> <span class="role role-TEACHER">TEACHER</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 8. LIFECYCLE -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-lifecycle">
+    <span class="section-anchor" id="lifecycle"></span>
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2>Request Lifecycle</h2>
+    </div>
+    <p>A complete example — a teacher submitting a grade:</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">User action</div>
+          <div class="step-desc">Teacher clicks "Add grade" in <code>ClassGrades.jsx</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">React sends the request</div>
+          <div class="step-desc"><code>POST /api/grades</code> with <code>Authorization: Bearer eyJ…</code> and body <code>{ studentId: 42, scheduleId: 7, value: 5.5 }</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">RequestLoggingFilter</div>
+          <div class="step-desc">Begins timing the request and logs the inbound line.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">LocalhostAdminFilter</div>
+          <div class="step-desc">Authorization header is present → bypass skipped.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">JwtAuthenticationFilter</div>
+          <div class="step-desc">Extracts token → <code>validateToken()</code> (HMAC signature + expiry check) → <code>getEmailFromToken()</code> → <code>loadUserByUsername()</code> loads <code>User</code> from DB as TEACHER → sets <code>SecurityContext</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-title">@PreAuthorize check</div>
+          <div class="step-desc"><code>hasRole('TEACHER') or hasRole('ADMIN') or hasRole('HEADMASTER')</code> → <strong style="color:var(--accent2)">PASS</strong></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <div class="step-title">GradeService.addGrade()</div>
+          <div class="step-desc">Validates schedule, student, and value; saves new <code>Grade</code> entity via <code>GradeRepository</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <div class="step-title">Response</div>
+          <div class="step-desc"><code>201 Created</code> → <code>{ id, studentId, subjectId, value, term, … }</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <div class="step-title">RequestLoggingFilter completes</div>
+          <div class="step-desc">Writes to <code>requests.log</code>: <code>POST /api/grades → 201 (12ms) [127.0.0.1]</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <div class="step-title">React updates UI</div>
+          <div class="step-desc">New grade chip appended to the table without a page reload.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- 9. CONFIGURATION -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="section" id="s-config">
+    <span class="section-anchor" id="config"></span>
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2>Configuration Reference</h2>
+    </div>
+
+    <h3>application.properties</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">properties</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="cm"># Database</span>
+spring.datasource.url=<span class="str">jdbc:postgresql://localhost:5432/ejournal</span>
+spring.datasource.username=<span class="str">ejournal_usr</span>
+spring.datasource.password=<span class="str">ejournal_pwd</span>
+spring.datasource.driver-class-name=<span class="str">org.postgresql.Driver</span>
+
+<span class="cm"># JPA / Hibernate</span>
+spring.jpa.database-platform=<span class="str">org.hibernate.dialect.PostgreSQLDialect</span>
+spring.jpa.show-sql=<span class="num">false</span>
+spring.jpa.hibernate.ddl-auto=<span class="str">update</span>
+spring.jpa.open-in-view=<span class="num">true</span>
+
+<span class="cm"># JWT</span>
+app.jwtSecret=<span class="str">&lt;at-least-64-char-secret&gt;</span>
+app.jwtExpirationInMs=<span class="num">86400000</span>   <span class="cm"># 24 h (access token)</span>
+                                 <span class="cm"># refresh token is always 7 days</span>
+
+<span class="cm"># Security</span>
+app.security.allow-localhost=<span class="num">true</span>   <span class="cm"># set false in production!</span>
+
+<span class="cm"># Logging</span>
+app.logging.path=<span class="str">logs</span>
+logging.config=<span class="str">classpath:logback-spring.xml</span></pre>
+    </div>
+
+    <h3>Log Files</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Contents</th><th>Retention</th></tr></thead>
+        <tbody>
+          <tr><td><code>e-journal.log</code></td><td>Full application log (INFO+), rotated daily</td><td>30 days</td></tr>
+          <tr><td><code>requests.log</code></td><td>One line per HTTP request: method · path · status · ms · IP</td><td>14 days</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Production Checklist</h3>
+    <ul class="checklist" id="checklist">
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Set <code>app.security.allow-localhost=false</code></span>
+      </li>
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Use a random JWT secret of at least 64 characters</span>
+      </li>
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Update CORS allowed origins in <code>SecurityConfig</code> to the real domain</span>
+      </li>
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Set <code>spring.jpa.hibernate.ddl-auto=validate</code> (never <code>update</code> in production)</span>
+      </li>
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Run as a dedicated low-privilege system user (see <code>configure-debian.sh</code> for systemd setup)</span>
+      </li>
+      <li onclick="toggleCheck(this)">
+        <div class="check-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0a0c10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <span class="check-label">Serve <code>frontend/dist/</code> via nginx or similar reverse proxy</span>
+      </li>
+    </ul>
+  </div>
+
+</div><!-- /content -->
+</main>
+
+<script>
+  // ── Mobile hamburger ──
+  const hamburger = document.getElementById('hamburger');
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('overlay');
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+
+  // ── TOC search filter ──
+  document.getElementById('toc-search').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('.toc-item').forEach(a => {
+      const match = a.textContent.toLowerCase().includes(q);
+      a.classList.toggle('hidden', !match);
+    });
+    document.querySelectorAll('.toc-group-label').forEach(label => {
+      const next = label.nextElementSibling;
+      let anyVisible = false;
+      let el = label.nextElementSibling;
+      while (el && !el.classList.contains('toc-group-label')) {
+        if (!el.classList.contains('hidden')) anyVisible = true;
+        el = el.nextElementSibling;
+      }
+      label.style.display = anyVisible ? '' : 'none';
+    });
+  });
+
+  // ── Active TOC on scroll ──
+  const sections = document.querySelectorAll('.section');
+  const tocItems = document.querySelectorAll('.toc-item[data-section]');
+
+  const sectionMap = {
+    's-overview':     'overview',
+    's-architecture': 'architecture',
+    's-jwt':          'jwt',
+    's-security':     'security',
+    's-roles':        'roles',
+    's-api':          'api',
+    's-frontend':     'frontend',
+    's-lifecycle':    'lifecycle',
+    's-config':       'config',
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const key = sectionMap[entry.target.id];
+        tocItems.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`.toc-item[data-section="${key}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -60% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+
+  // ── Section entrance animation ──
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.05 });
+
+  sections.forEach(s => revealObserver.observe(s));
+
+  // ── Copy to clipboard ──
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ── Production checklist ──
+  function toggleCheck(li) {
+    li.classList.toggle('done');
+  }
+
+  // ── Close sidebar on TOC click (mobile) ──
+  document.querySelectorAll('.toc-item').forEach(a => {
+    a.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+  });
+</script>
+</body>
+</html>

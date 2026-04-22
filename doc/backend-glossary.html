@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <title>backend-glossary.txt</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            padding: 40px;
+            background-color: #f4f4f9;
+            color: #333;
+            max-width: 800px;
+            margin: auto;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        pre {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>backend-glossary.txt</h1>
+    <pre>
+1. Architecture & Layers
+
+These terms describe how the application is structurally divided.
+
+    N-Tier Architecture: A software architecture where different concerns (like presentation, business processing, and data storage) are separated into distinct logical layers (or "tiers"). The most common is the 3-tier architecture.
+
+    Separation of Concerns (SoC): A design principle dictating that an application should be divided into distinct sections, where each section addresses a separate, specific responsibility.
+
+    Presentation Layer / Controller: The topmost layer that handles user or client interaction. It receives HTTP requests, routes them, and returns responses.
+
+    Service Layer / Business Logic Layer: The middle layer where the actual work happens. It handles calculations, data processing, and business rules.
+
+    Data Access Layer (DAL) / Persistence Layer: The bottom layer responsible for communicating with the database or other external storage.
+
+2. Data Objects & Mapping
+
+These terms describe the different shapes your data takes as it moves through the application.
+
+    Entity / Domain Model: A class that directly maps to a database table. Its fields represent the columns in that table.
+
+    DTO (Data Transfer Object): A simplified object used specifically to carry data between the layers or over the network to the client, usually to hide sensitive data or format it better.
+
+    DAO (Data Access Object): An object or interface that provides the specific methods (like SQL queries) to read or write Entities to the database.
+
+    POJO (Plain Old Java Object): A basic Java object that doesn't rely on any specific framework or contain special annotations. Entities and DTOs often start as POJOs.
+
+    Mapper / Mapping: The process of converting one object type to another, most commonly converting a database Entity into a DTO before sending it to the client.
+
+    Payload: The actual data contained within the body of an HTTP request (what the client sends) or response (what the server returns), usually formatted as JSON.
+
+3. Business Logic & Operations
+
+These terms relate to the actions and rules your application enforces.
+
+    Business Logic / Business Rules: The custom rules that dictate how data can be created, stored, and changed according to real-world business needs (e.g., "A user must be 18 to register" or "Apply a 10% discount if the cart total is over $50").
+
+    CRUD: An acronym for the four basic database operations: Create, Read, Update, Delete.
+
+    Transaction: A sequence of operations treated as a single, indivisible unit of work. If a transaction involves three steps and step three fails, the first two steps are rolled back so the database isn't left in a corrupted state.
+
+    ACID: A set of properties that guarantee database transactions are processed reliably: Atomicity, Consistency, Isolation, Durability.
+
+4. Database & Persistence
+
+These terms describe how the backend actually talks to the database.
+
+    ORM (Object-Relational Mapping): A technique or tool that lets you query and manipulate data from a database using an object-oriented paradigm. It translates your Java classes (Entities) into SQL tables automatically.
+
+    JPA (Java Persistence API): The standard specification in Java for managing relational data (ORM). Hibernate is the most common tool used to actually implement JPA.
+
+    Repository Pattern: A design pattern (heavily used in Spring Boot via @Repository) that acts like an in-memory collection of your Entities. It hides the complex database queries behind simple methods like findById() or save().
+
+5. API & Communication
+
+These terms describe how the outside world talks to your layers.
+
+    API (Application Programming Interface): A set of rules that allows different software applications to communicate with each other.
+
+    REST (Representational State Transfer): A standard architectural style for building web APIs. It uses standard HTTP methods (GET, POST, PUT, DELETE) to manage resources.
+
+    Endpoint: A specific URL where an API can be accessed by a client (e.g., https://api.myapp.com/users).
+
+    Serialization / Deserialization: The process of translating a data structure into a format that can be stored or transmitted. In web backends, this usually means converting a Java DTO into JSON (Serialization) or converting incoming JSON into a Java DTO (Deserialization).
+
+    Dependency Injection (DI) / Inversion of Control (IoC): A design pattern where a framework (like Spring) automatically provides the objects (dependencies) a class needs to function, rather than the class creating them itself. This is how the Controller gets access to the Service, and the Service gets access to the Repository.</pre>
+</body>
+</html>

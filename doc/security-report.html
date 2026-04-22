@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduTrack — Security Audit Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  /* ─── Reset & tokens ──────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0d0f14;
+    --bg2:         #111318;
+    --bg3:         #161920;
+    --bg4:         #1c1f28;
+    --border:      #252830;
+    --border2:     #2e3240;
+    --text:        #c8ccd8;
+    --text-dim:    #5a5f72;
+    --text-bright: #e8ecf5;
+    --mono:        'JetBrains Mono', monospace;
+    --sans:        'DM Sans', sans-serif;
+
+    --crit:        #ff3b3b;
+    --crit-dim:    #3d1515;
+    --crit-glow:   rgba(255,59,59,.15);
+    --high:        #ff8c00;
+    --high-dim:    #2e1c00;
+    --high-glow:   rgba(255,140,0,.12);
+    --med:         #f5c518;
+    --med-dim:     #2a2200;
+    --med-glow:    rgba(245,197,24,.10);
+    --low:         #5b8def;
+    --low-dim:     #0f1a35;
+    --low-glow:    rgba(91,141,239,.10);
+    --pass:        #22c55e;
+    --pass-dim:    #0d2318;
+    --pass-glow:   rgba(34,197,94,.10);
+
+    --sidebar-w:   260px;
+    --header-h:    0px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.65;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Sidebar ─────────────────────────────────────────────────────────── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow: hidden;
+    transition: transform .3s cubic-bezier(.4,0,.2,1);
+  }
+
+  .sidebar-logo {
+    padding: 22px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    flex-shrink: 0;
+  }
+
+  .logo-shield {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--crit), #8b0000);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 16px var(--crit-glow);
+  }
+
+  .logo-shield svg { width: 18px; height: 18px; fill: #fff; }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    color: var(--text-bright);
+    line-height: 1.3;
+  }
+  .logo-text span {
+    display: block;
+    font-size: 9px;
+    font-weight: 400;
+    color: var(--text-dim);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  /* Filter buttons */
+  .sidebar-filters {
+    padding: 14px 12px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  .filter-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .filter-btn {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    padding: 4px 9px;
+    border-radius: 4px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all .18s;
+  }
+
+  .filter-btn:hover { border-color: #3e4255; color: var(--text); }
+  .filter-btn.active { color: #fff; }
+  .filter-btn[data-f="ALL"].active   { background: #2a2d3a; border-color: #3e4255; color: var(--text-bright); }
+  .filter-btn[data-f="CRITICAL"].active { background: var(--crit-dim); border-color: var(--crit); color: var(--crit); }
+  .filter-btn[data-f="HIGH"].active  { background: var(--high-dim); border-color: var(--high); color: var(--high); }
+  .filter-btn[data-f="MEDIUM"].active{ background: var(--med-dim); border-color: var(--med); color: var(--med); }
+  .filter-btn[data-f="LOW"].active   { background: var(--low-dim); border-color: var(--low); color: var(--low); }
+  .filter-btn[data-f="PASS"].active  { background: var(--pass-dim); border-color: var(--pass); color: var(--pass); }
+
+  .finding-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 9px;
+    padding-left: 4px;
+  }
+  .finding-count strong { color: var(--text-bright); font-weight: 600; }
+
+  /* Nav links */
+  .sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0 20px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .nav-section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 10px 20px 5px;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 20px;
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 400;
+    transition: all .15s;
+    border-left: 2px solid transparent;
+    position: relative;
+  }
+
+  .nav-link:hover {
+    color: var(--text-bright);
+    border-left-color: var(--border2);
+    background: rgba(255,255,255,.02);
+  }
+
+  .nav-link.active {
+    color: var(--text-bright);
+    border-left-color: var(--crit);
+    background: rgba(255,59,59,.04);
+  }
+
+  .nav-sev {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+  }
+
+  /* ─── Hamburger ───────────────────────────────────────────────────────── */
+  #hamburger {
+    display: none;
+    position: fixed;
+    top: 14px; left: 14px;
+    z-index: 200;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 7px;
+    width: 38px; height: 38px;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px;
+  }
+
+  #hamburger span {
+    display: block;
+    width: 18px; height: 1.5px;
+    background: var(--text);
+    border-radius: 2px;
+    transition: all .25s;
+  }
+
+  /* ─── Main content ────────────────────────────────────────────────────── */
+  #main {
+    margin-left: var(--sidebar-w);
+    min-height: 100vh;
+  }
+
+  /* ─── Hero ────────────────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    background: linear-gradient(160deg, #0d1520 0%, #0d0f14 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 56px 52px;
+    overflow: hidden;
+  }
+
+  /* Scanline texture */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.014) 0px,
+      rgba(255,255,255,.014) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+  }
+
+  /* Diagonal grid accent */
+  .hero::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 340px; height: 340px;
+    background:
+      repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 22px,
+        rgba(255,59,59,.04) 22px,
+        rgba(255,59,59,.04) 23px
+      );
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .hero-classif {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--crit);
+    border: 1px solid var(--crit);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px;
+    border-radius: 3px;
+    margin-bottom: 28px;
+    background: var(--crit-dim);
+  }
+
+  .hero-classif::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--crit);
+    border-radius: 50%;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .25; }
+  }
+
+  .hero h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 3vw, 34px);
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -.01em;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .hero h1 .accent { color: var(--crit); }
+
+  .hero-sub {
+    font-size: 15px;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-bottom: 30px;
+    letter-spacing: .01em;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .hero-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .hero-meta-item svg { width: 13px; height: 13px; opacity: .5; }
+
+  .threat-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--crit-dim);
+    border: 1px solid var(--crit);
+    border-radius: 5px;
+    padding: 5px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--crit);
+    letter-spacing: .1em;
+  }
+
+  .threat-badge::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--crit);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--crit);
+    animation: pulse-threat 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse-threat {
+    0%, 100% { box-shadow: 0 0 4px var(--crit); transform: scale(1); }
+    50% { box-shadow: 0 0 14px var(--crit); transform: scale(1.3); }
+  }
+
+  /* ─── Content area ────────────────────────────────────────────────────── */
+  .content {
+    padding: 0 56px 80px;
+    max-width: 960px;
+  }
+
+  /* ─── Sections ────────────────────────────────────────────────────────── */
+  .section {
+    margin-top: 60px;
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .5s ease, transform .5s ease;
+  }
+
+  .section.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 26px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    font-weight: 400;
+    letter-spacing: .1em;
+    flex-shrink: 0;
+  }
+
+  .section-title {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -.01em;
+  }
+
+  /* ─── Stat grid ───────────────────────────────────────────────────────── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 16px;
+    transition: border-color .2s;
+  }
+
+  .stat-card:hover { border-color: var(--border2); }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .stat-card.crit  { border-left: 3px solid var(--crit); }
+  .stat-card.crit  .stat-num { color: var(--crit); }
+  .stat-card.high  { border-left: 3px solid var(--high); }
+  .stat-card.high  .stat-num { color: var(--high); }
+  .stat-card.med   { border-left: 3px solid var(--med); }
+  .stat-card.med   .stat-num { color: var(--med); }
+  .stat-card.low   { border-left: 3px solid var(--low); }
+  .stat-card.low   .stat-num { color: var(--low); }
+  .stat-card.pass  { border-left: 3px solid var(--pass); }
+  .stat-card.pass  .stat-num { color: var(--pass); }
+  .stat-card.total { border-left: 3px solid #3e4255; }
+  .stat-card.total .stat-num { color: var(--text-bright); }
+  .stat-card.comp  { border-left: 3px solid #6b7595; }
+  .stat-card.comp  .stat-num { color: #9aa3c0; }
+
+  /* threat level card */
+  .stat-card.threat {
+    border-left: 3px solid var(--crit);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .threat-inner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--crit);
+  }
+
+  .threat-dot {
+    width: 9px; height: 9px;
+    background: var(--crit);
+    border-radius: 50%;
+    animation: pulse-threat 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  /* ─── Finding cards ───────────────────────────────────────────────────── */
+  .findings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .finding-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .finding-card:hover {
+    border-color: var(--border2);
+  }
+
+  .finding-card[data-sev="CRITICAL"] { border-left: 3px solid var(--crit); }
+  .finding-card[data-sev="CRITICAL"]:hover { box-shadow: 0 0 24px var(--crit-glow); }
+  .finding-card[data-sev="HIGH"]     { border-left: 3px solid var(--high); }
+  .finding-card[data-sev="HIGH"]:hover { box-shadow: 0 0 24px var(--high-glow); }
+  .finding-card[data-sev="MEDIUM"]   { border-left: 3px solid var(--med); }
+  .finding-card[data-sev="MEDIUM"]:hover { box-shadow: 0 0 24px var(--med-glow); }
+  .finding-card[data-sev="LOW"]      { border-left: 3px solid var(--low); }
+  .finding-card[data-sev="LOW"]:hover { box-shadow: 0 0 24px var(--low-glow); }
+  .finding-card[data-sev="PASS"]     { border-left: 3px solid var(--pass); }
+  .finding-card[data-sev="PASS"]:hover { box-shadow: 0 0 24px var(--pass-glow); }
+
+  .finding-card.hidden { display: none; }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px 13px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg4);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .sev-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .sev-badge.CRITICAL { background: var(--crit-dim); color: var(--crit); border: 1px solid rgba(255,59,59,.3); }
+  .sev-badge.HIGH     { background: var(--high-dim); color: var(--high); border: 1px solid rgba(255,140,0,.3); }
+  .sev-badge.MEDIUM   { background: var(--med-dim);  color: var(--med);  border: 1px solid rgba(245,197,24,.3); }
+  .sev-badge.LOW      { background: var(--low-dim);  color: var(--low);  border: 1px solid rgba(91,141,239,.3); }
+  .sev-badge.PASS     { background: var(--pass-dim); color: var(--pass); border: 1px solid rgba(34,197,94,.3); }
+
+  .card-id {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--text-dim);
+    font-weight: 500;
+    flex-shrink: 0;
+    letter-spacing: .05em;
+  }
+
+  .card-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-bright);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-toggle {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    transition: transform .2s;
+  }
+
+  .card-toggle.open { transform: rotate(180deg); }
+
+  .card-body {
+    padding: 20px 18px;
+    display: none;
+  }
+
+  .card-body.open { display: block; }
+
+  .card-desc {
+    font-size: 13.5px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .card-desc strong { color: var(--text-bright); font-weight: 600; }
+  .card-desc code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: #9ab;
+  }
+
+  .card-section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 7px;
+    margin-top: 16px;
+  }
+
+  .card-section-label:first-of-type { margin-top: 0; }
+
+  .file-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 4px 10px;
+    color: #7da0c4;
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+  }
+
+  .file-chip:hover { border-color: #3e5a7a; background: #0d1825; }
+
+  .file-chip .copy-icon {
+    opacity: 0;
+    font-size: 9px;
+    color: var(--text-dim);
+    transition: opacity .15s;
+  }
+
+  .file-chip:hover .copy-icon { opacity: 1; }
+
+  .file-chip.copied {
+    border-color: var(--pass);
+    color: var(--pass);
+  }
+
+  .fix-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--pass);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  .fix-box code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: rgba(34,197,94,.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #7dd4a0;
+  }
+
+  /* ─── Priority table ──────────────────────────────────────────────────── */
+  .prio-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .prio-table thead th {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 9px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+    background: var(--bg3);
+  }
+
+  .prio-table tbody td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .prio-table tbody tr:last-child td { border-bottom: none; }
+
+  .prio-table tbody tr:hover td { background: rgba(255,255,255,.018); }
+
+  .prio-table .finding-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .prio-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    color: var(--text-bright);
+    font-weight: 700;
+  }
+
+  .effort-bar {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .effort-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    background: var(--border2);
+  }
+
+  .effort-dot.filled { background: var(--text-dim); }
+
+  /* ─── Scope section ────────────────────────────────────────────────────── */
+  .scope-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 26px;
+    font-size: 13.5px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .scope-box p + p { margin-top: 14px; }
+
+  .scope-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: .1em;
+    background: var(--bg4);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    padding: 2px 7px;
+    color: var(--text-dim);
+    margin: 2px 2px;
+    vertical-align: middle;
+  }
+
+  /* ─── Overlay ─────────────────────────────────────────────────────────── */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 90;
+  }
+
+  /* ─── Scrollbar ───────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* ─── Print ───────────────────────────────────────────────────────────── */
+  @media print {
+    #sidebar, #hamburger, #overlay { display: none !important; }
+    #main { margin-left: 0 !important; }
+    .card-body { display: block !important; }
+    .card-toggle { display: none; }
+    .section { opacity: 1 !important; transform: none !important; }
+    .hero { background: #fff !important; color: #000 !important; }
+    body { background: #fff !important; color: #111 !important; }
+    .finding-card.hidden { display: block !important; }
+  }
+
+  /* ─── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 260px; }
+
+    #sidebar {
+      transform: translateX(-100%);
+      box-shadow: 4px 0 32px rgba(0,0,0,.6);
+    }
+
+    #sidebar.open { transform: translateX(0); }
+
+    #hamburger { display: flex; }
+    #overlay.open { display: block; }
+
+    #main { margin-left: 0; }
+
+    .hero { padding: 60px 24px 40px; }
+    .content { padding: 0 24px 60px; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hamburger -->
+<button id="hamburger" aria-label="Toggle menu" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- Overlay -->
+<div id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- ─── Sidebar ──────────────────────────────────────────────────────────── -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-shield">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6l-8-4zm-1 13l-3-3 1.41-1.41L11 12.17l4.59-4.58L17 9l-6 6z"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      SECURITY REPORT
+      <span>EduTrack · April 2026</span>
+    </div>
+  </div>
+
+  <div class="sidebar-filters">
+    <div class="filter-label">Filter by severity</div>
+    <div class="filter-btns">
+      <button class="filter-btn active" data-f="ALL" onclick="setFilter('ALL')">ALL</button>
+      <button class="filter-btn" data-f="CRITICAL" onclick="setFilter('CRITICAL')">CRIT</button>
+      <button class="filter-btn" data-f="HIGH" onclick="setFilter('HIGH')">HIGH</button>
+      <button class="filter-btn" data-f="MEDIUM" onclick="setFilter('MEDIUM')">MED</button>
+      <button class="filter-btn" data-f="LOW" onclick="setFilter('LOW')">LOW</button>
+      <button class="filter-btn" data-f="PASS" onclick="setFilter('PASS')">PASS</button>
+    </div>
+    <div class="finding-count" id="findingCount"><strong>14</strong> findings shown</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Contents</div>
+    <a class="nav-link" href="#summary">
+      <span>Executive Summary</span>
+    </a>
+    <a class="nav-link" href="#findings">
+      <span>Security Findings</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:6px;">Critical</div>
+    <a class="nav-link" href="#sec-001">
+      <span class="nav-sev sev-badge CRITICAL">CRIT</span>
+      <span>SEC-001 Parent IDOR</span>
+    </a>
+    <a class="nav-link" href="#sec-002">
+      <span class="nav-sev sev-badge CRITICAL">CRIT</span>
+      <span>SEC-002 Localhost Bypass</span>
+    </a>
+    <a class="nav-link" href="#sec-003">
+      <span class="nav-sev sev-badge CRITICAL">CRIT</span>
+      <span>SEC-003 JWT Secret</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:6px;">High</div>
+    <a class="nav-link" href="#sec-004">
+      <span class="nav-sev sev-badge HIGH">HIGH</span>
+      <span>SEC-004 Picture IDOR</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:6px;">Medium</div>
+    <a class="nav-link" href="#sec-005">
+      <span class="nav-sev sev-badge MEDIUM">MED</span>
+      <span>SEC-005 File Upload</span>
+    </a>
+    <a class="nav-link" href="#sec-006">
+      <span class="nav-sev sev-badge MEDIUM">MED</span>
+      <span>SEC-006 CORS Headers</span>
+    </a>
+    <a class="nav-link" href="#sec-007">
+      <span class="nav-sev sev-badge MEDIUM">MED</span>
+      <span>SEC-007 Class IDOR</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:6px;">Low / Pass</div>
+    <a class="nav-link" href="#sec-008">
+      <span class="nav-sev sev-badge LOW">LOW</span>
+      <span>SEC-008 Mock Login</span>
+    </a>
+    <a class="nav-link" href="#passing">
+      <span class="nav-sev sev-badge PASS">PASS</span>
+      <span>Passing Controls</span>
+    </a>
+
+    <div class="nav-section-label" style="margin-top:6px;">Reference</div>
+    <a class="nav-link" href="#remediation">
+      <span>Remediation Table</span>
+    </a>
+    <a class="nav-link" href="#scope">
+      <span>Scope &amp; Methodology</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ─── Main ─────────────────────────────────────────────────────────────── -->
+<div id="main">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-classif">INTERNAL USE ONLY</div>
+    <h1>EduTrack — <span class="accent">Security</span> Audit Report</h1>
+    <p class="hero-sub">Backend &amp; Frontend Security Review · Spring Boot 3.5 · React/Vite</p>
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+        April 18, 2026
+      </div>
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        Manual Code Review
+      </div>
+      <div class="hero-meta-item">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+        2 Components Audited
+      </div>
+      <div class="threat-badge">THREAT LEVEL: HIGH</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ── Executive Summary ───────────────────────────────────────────── -->
+    <section class="section" id="summary">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Executive Summary</h2>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card crit">
+          <div class="stat-num">3</div>
+          <div class="stat-label">Critical</div>
+        </div>
+        <div class="stat-card high">
+          <div class="stat-num">1</div>
+          <div class="stat-label">High</div>
+        </div>
+        <div class="stat-card med">
+          <div class="stat-num">3</div>
+          <div class="stat-label">Medium</div>
+        </div>
+        <div class="stat-card low">
+          <div class="stat-num">1</div>
+          <div class="stat-label">Low</div>
+        </div>
+        <div class="stat-card pass">
+          <div class="stat-num">6</div>
+          <div class="stat-label">Passing Controls</div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-num">14</div>
+          <div class="stat-label">Total Reviewed</div>
+        </div>
+        <div class="stat-card comp">
+          <div class="stat-num">2</div>
+          <div class="stat-label">Components</div>
+        </div>
+        <div class="stat-card threat">
+          <div class="stat-label" style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;">Overall Risk</div>
+          <div class="threat-inner">
+            <span class="threat-dot"></span>
+            HIGH
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Security Findings ───────────────────────────────────────────── -->
+    <section class="section" id="findings">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Security Findings</h2>
+      </div>
+      <div class="findings-list" id="findingsList">
+
+        <!-- SEC-001 -->
+        <div class="finding-card" data-sev="CRITICAL" id="sec-001">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge CRITICAL">CRITICAL</span>
+            <span class="card-id">SEC-001</span>
+            <span class="card-title">Parent IDOR — Student Grades / Absences / Complaints</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              Parents authenticated with a valid JWT can query
+              <code>/api/grades/student/{studentId}</code>,
+              <code>/api/absences/student/{studentId}</code>, and
+              <code>/api/complaints/student/{studentId}</code>
+              for <strong>any arbitrary student ID</strong>. No ownership check confirms the
+              authenticated parent is linked to the requested student. By iterating
+              integer IDs a parent can enumerate all student records across every school
+              in the system.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                GradeController.java<span style="color:var(--text-dim)">:53</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AbsenceController.java<span style="color:var(--text-dim)">:53</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                ComplaintController.java<span style="color:var(--text-dim)">:53</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              In each service's <code>getByStudent()</code> method, check whether the authenticated
+              principal holds the PARENT role and, if so, verify the requested <code>studentId</code>
+              is linked to that parent via the Student entity's <code>parent</code> field.
+              Throw <code>403 Forbidden</code> if ownership is not confirmed. ADMIN, HEADMASTER,
+              and TEACHER roles may be exempted from the ownership check.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-002 -->
+        <div class="finding-card" data-sev="CRITICAL" id="sec-002">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge CRITICAL">CRITICAL</span>
+            <span class="card-id">SEC-002</span>
+            <span class="card-title">LocalhostAdminFilter Grants Full Admin Access by Default</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              <code>LocalhostAdminFilter</code> automatically injects all roles
+              (ADMIN, HEADMASTER, TEACHER, STUDENT, PARENT) into the Spring Security
+              context for any unauthenticated HTTP request originating from
+              <strong>127.0.0.1</strong>. The flag
+              <code>app.security.allow-localhost=true</code> is set <strong>by default</strong>
+              in <code>application.properties</code>. In a Docker container, Kubernetes pod,
+              or any CI environment where the application is co-located with other processes,
+              any local service or script can bypass authentication entirely and perform
+              arbitrary admin operations.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                LocalhostAdminFilter.java<span style="color:var(--text-dim)">:51–59</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                application.properties<span style="color:var(--text-dim)">:22</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Set <code>app.security.allow-localhost=false</code> as the production default.
+              Use a Spring profile (<code>@Profile("dev")</code>) to register the filter only
+              in development. Add a startup assertion that fails fast if the flag is
+              <code>true</code> and <code>spring.profiles.active</code> is not <code>dev</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-003 -->
+        <div class="finding-card" data-sev="CRITICAL" id="sec-003">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge CRITICAL">CRITICAL</span>
+            <span class="card-id">SEC-003</span>
+            <span class="card-title">JWT Signing Secret Committed to Source Control</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              The HMAC-SHA256 signing key
+              <code>app.jwtSecret=ChXOzUTGtMGeRxHkFbhOnbrAjEBhnlttLB2w2biETpTPktQsyBr5LsCcu3bNlGou</code>
+              is committed verbatim in <code>application.properties</code>.
+              Any person with read access to the repository — including
+              contributors, GitHub Actions runners, or a leaked archive — can
+              <strong>forge valid JWT tokens for any user including system admins</strong>.
+              The secret is also present in git history and cannot be fully purged without
+              a force-push rewrite.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                application.properties<span style="color:var(--text-dim)">:17</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Immediately rotate the current key. Replace the hardcoded value with
+              <code>${JWT_SECRET}</code> and inject via environment variable or a secrets
+              manager (HashiCorp Vault, AWS Secrets Manager). Add
+              <code>application.properties</code> secret values to <code>.gitignore</code>.
+              Use <code>application-prod.properties</code> (excluded from VCS) for
+              production overrides.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-004 -->
+        <div class="finding-card" data-sev="HIGH" id="sec-004">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge HIGH">HIGH</span>
+            <span class="card-id">SEC-004</span>
+            <span class="card-title">Profile Picture IDOR — No Authorization on GET Endpoint</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              <code>GET /api/users/{id}/picture</code> carries no <code>@PreAuthorize</code>
+              annotation and performs no ownership or role check. Any authenticated user
+              (including STUDENT or PARENT) can retrieve the profile picture of any other
+              user by iterating integer IDs. This is a horizontal privilege escalation
+              allowing silent enumeration of all uploaded user photos.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                UserController.java<span style="color:var(--text-dim)">:82–87</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                UserService.java<span style="color:var(--text-dim)">:73–87</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Add <code>@PreAuthorize</code> to allow only the picture owner
+              (<code>principal.id == id</code>) or privileged roles (ADMIN, HEADMASTER).
+              Alternatively, expose a single <code>/api/profile/picture</code> endpoint
+              that always serves the authenticated user's own picture.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-005 -->
+        <div class="finding-card" data-sev="MEDIUM" id="sec-005">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge MEDIUM">MEDIUM</span>
+            <span class="card-id">SEC-005</span>
+            <span class="card-title">File Upload Validated by Content-Type Header Only</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              Profile picture upload (<code>PUT /api/profile/picture</code>) validates the
+              uploaded file by checking <code>contentType.startsWith("image/")</code>.
+              Content-Type is a <strong>client-controlled header</strong> that can be
+              trivially spoofed. An attacker can upload an SVG containing embedded
+              <code>&lt;script&gt;</code> tags, an HTML file, or other active content disguised
+              as an image. If subsequently served without <code>Content-Disposition: attachment</code>
+              or <code>X-Content-Type-Options: nosniff</code>, this enables stored XSS.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                ProfileService.java<span style="color:var(--text-dim)">:42–56</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Read the first 16 bytes of the upload and validate magic bytes:
+              PNG (<code>89 50 4E 47</code>), JPEG (<code>FF D8 FF</code>),
+              GIF (<code>47 49 46 38</code>). Reject SVG unconditionally.
+              Enforce a maximum file size (5 MB). When serving images, set
+              <code>X-Content-Type-Options: nosniff</code> and serve from
+              a content-delivery origin separate from the API domain.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-006 -->
+        <div class="finding-card" data-sev="MEDIUM" id="sec-006">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge MEDIUM">MEDIUM</span>
+            <span class="card-id">SEC-006</span>
+            <span class="card-title">CORS Configuration Allows Wildcard Request Headers</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              <code>config.setAllowedHeaders(List.of("*"))</code> permits any HTTP request
+              header from the allowed origin. Combined with
+              <code>setAllowCredentials(true)</code> — which causes browsers to send
+              HttpOnly cookies cross-origin — this unnecessarily widens the attack surface.
+              Certain CDN and reverse-proxy configurations treat wildcard-header credentialed
+              CORS as a policy violation or behave unexpectedly, potentially caching
+              preflight responses incorrectly.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                SecurityConfig.java<span style="color:var(--text-dim)">:77</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Replace the wildcard with an explicit allowlist:
+              <code>List.of("Authorization", "Content-Type", "X-Requested-With")</code>.
+              Also ensure the production frontend origin is set via an environment variable
+              rather than hardcoded to <code>localhost:5173</code>.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-007 -->
+        <div class="finding-card" data-sev="MEDIUM" id="sec-007">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge MEDIUM">MEDIUM</span>
+            <span class="card-id">SEC-007</span>
+            <span class="card-title">Class &amp; Schedule Access Without Enrollment Verification</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              <code>GET /api/classes/{id}</code> and schedule endpoints grant access to any
+              authenticated role, including STUDENT and PARENT, without verifying that the
+              student is enrolled in the requested class or the parent has a child there.
+              This leaks cross-school metadata — teacher names, subject lists, timetables —
+              to users with no legitimate need for the information.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                ClassController.java<span style="color:var(--text-dim)">:54–59</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              For STUDENT and PARENT roles, resolve the requesting user's enrolled class
+              and compare it against the path parameter. If the IDs do not match, return
+              <code>403 Forbidden</code>. ADMIN, HEADMASTER, and TEACHER roles may query
+              any class within their school's scope.
+            </div>
+          </div>
+        </div>
+
+        <!-- SEC-008 -->
+        <div class="finding-card" data-sev="LOW" id="sec-008">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge LOW">LOW</span>
+            <span class="card-id">SEC-008</span>
+            <span class="card-title">Development Mock Login Code in Production Bundle</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <div class="card-section-label">Description</div>
+            <p class="card-desc">
+              <code>AuthProvider.jsx</code> contains a <code>mockAdminLogin()</code>
+              function (lines 104–120) and a bypass guard
+              <code>if (accessToken === "fake.jwt.token") return;</code> (line 51).
+              Both are present in the production JavaScript bundle. Discovery via
+              source maps or static bundle analysis exposes hardcoded mock credentials
+              and admin session bypass logic, providing a roadmap for attempted exploitation
+              and failing security audits.
+            </p>
+            <div class="card-section-label">Affected Files</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AuthProvider.jsx<span style="color:var(--text-dim)">:51</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AuthProvider.jsx<span style="color:var(--text-dim)">:104–120</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+            <div class="card-section-label">Recommendation</div>
+            <div class="fix-box">
+              Wrap the mock code in <code>if (import.meta.env.DEV) { … }</code> so
+              Vite's tree-shaker eliminates it in production builds. Add an ESLint rule
+              (e.g., <code>no-restricted-syntax</code> matching <code>mockAdminLogin</code>)
+              that fails the CI pipeline if the function is detected outside
+              <code>*.dev.*</code> files.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Passing Controls ────────────────────────────────────────────── -->
+    <section class="section" id="passing">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2 class="section-title">Passing Security Controls</h2>
+      </div>
+      <div class="findings-list" id="passList">
+
+        <div class="finding-card" data-sev="PASS" id="pass-01">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-01</span>
+            <span class="card-title">Passwords Hashed with BCrypt</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              All passwords are stored using <code>BCryptPasswordEncoder</code>.
+              Plain-text passwords are never persisted or logged. The current password
+              is validated via <code>passwordEncoder.matches()</code> before any
+              password-change operation is accepted.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                UserService.java<span style="color:var(--text-dim)">:101</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                ProfileService.java<span style="color:var(--text-dim)">:30–40</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card" data-sev="PASS" id="pass-02">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-02</span>
+            <span class="card-title">JWT in Memory + Refresh Token in HttpOnly Cookie</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              Access tokens are held in React component state — <strong>not localStorage</strong>
+              — protecting against XSS-based token theft. Refresh tokens are issued as
+              HttpOnly, path-scoped (<code>/auth</code>) cookies by the backend, preventing
+              JavaScript access entirely.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AuthProvider.jsx<span style="color:var(--text-dim)">:context state</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AuthController.java<span style="color:var(--text-dim)">:115–125</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card" data-sev="PASS" id="pass-03">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-03</span>
+            <span class="card-title">Stateless Session — No Server-Side Session State</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              Spring Security is configured with <code>SessionCreationPolicy.STATELESS</code>.
+              No HTTP sessions are created or maintained. This eliminates session fixation,
+              session hijacking, and CSRF vectors that depend on session cookies.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                SecurityConfig.java<span style="color:var(--text-dim)">:60</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card" data-sev="PASS" id="pass-04">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-04</span>
+            <span class="card-title">Method-Level Security Enabled</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              <code>@EnableMethodSecurity</code> is active, enabling fine-grained
+              <code>@PreAuthorize</code> annotations on individual controller methods.
+              Most endpoints are guarded with explicit role checks rather than relying
+              solely on URL-pattern matching, reducing the blast radius of a misconfigured
+              security filter chain.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                SecurityConfig.java<span style="color:var(--text-dim)">:28</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card" data-sev="PASS" id="pass-05">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-05</span>
+            <span class="card-title">Input Validation with Jakarta Constraints</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              All inbound request DTOs are annotated with <code>@NotBlank</code>,
+              <code>@Email</code>, <code>@Size</code>, and <code>@Valid</code>, enforced
+              at the controller layer by Spring's binding result. This prevents null
+              injection, oversized inputs, and malformed email addresses from reaching
+              the service layer.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                CreateUserRequest.java<span style="color:var(--text-dim)">:all fields</span>
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                GradeRequest.java
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AbsenceRequest.java
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="finding-card" data-sev="PASS" id="pass-06">
+          <div class="card-head" onclick="toggleCard(this)">
+            <span class="sev-badge PASS">PASS</span>
+            <span class="card-id">PASS-06</span>
+            <span class="card-title">No SQL Injection Risk — Parameterized JPA Queries</span>
+            <span class="card-toggle">▾</span>
+          </div>
+          <div class="card-body">
+            <p class="card-desc">
+              All database access uses Spring Data JPA derived query methods or JPQL
+              with named/positional parameters. No raw SQL string concatenation or
+              dynamic query construction was found in any repository. The ORM layer
+              fully parameterizes all values before execution.
+            </p>
+            <div class="card-section-label">Evidence</div>
+            <div class="file-chips">
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                UserRepository.java
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                GradeRepository.java
+                <span class="copy-icon">⎘</span>
+              </span>
+              <span class="file-chip" onclick="copyChip(this)" title="Click to copy">
+                AbsenceRepository.java
+                <span class="copy-icon">⎘</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── Remediation Table ───────────────────────────────────────────── -->
+    <section class="section" id="remediation">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Remediation Priority</h2>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <table class="prio-table">
+          <thead>
+            <tr>
+              <th>Finding</th>
+              <th>Severity</th>
+              <th>Effort</th>
+              <th>Risk Reduction</th>
+              <th>Priority</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="#sec-001" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-001 · Parent IDOR</a></td>
+              <td><span class="sev-badge CRITICAL">CRITICAL</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot filled"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--crit);font-weight:600;font-size:12px;">Very High</td>
+              <td><span class="prio-num">1</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-002" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-002 · Localhost Bypass</a></td>
+              <td><span class="sev-badge CRITICAL">CRITICAL</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--crit);font-weight:600;font-size:12px;">Very High</td>
+              <td><span class="prio-num">2</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-003" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-003 · JWT Secret</a></td>
+              <td><span class="sev-badge CRITICAL">CRITICAL</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--high);font-weight:600;font-size:12px;">High</td>
+              <td><span class="prio-num">3</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-004" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-004 · Picture IDOR</a></td>
+              <td><span class="sev-badge HIGH">HIGH</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--med);font-weight:600;font-size:12px;">Medium</td>
+              <td><span class="prio-num">4</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-005" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-005 · File Upload</a></td>
+              <td><span class="sev-badge MEDIUM">MEDIUM</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot filled"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--med);font-weight:600;font-size:12px;">Medium</td>
+              <td><span class="prio-num">5</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-006" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-006 · CORS Headers</a></td>
+              <td><span class="sev-badge MEDIUM">MEDIUM</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--low);font-weight:600;font-size:12px;">Low</td>
+              <td><span class="prio-num">6</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-007" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-007 · Class Access</a></td>
+              <td><span class="sev-badge MEDIUM">MEDIUM</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot filled"></div><div class="effort-dot filled"></div></div></td>
+              <td style="color:var(--med);font-weight:600;font-size:12px;">Medium</td>
+              <td><span class="prio-num">7</span></td>
+            </tr>
+            <tr>
+              <td><a href="#sec-008" style="color:var(--text);text-decoration:none;" class="finding-id">SEC-008 · Mock Login</a></td>
+              <td><span class="sev-badge LOW">LOW</span></td>
+              <td><div class="effort-bar"><div class="effort-dot filled"></div><div class="effort-dot"></div><div class="effort-dot"></div></div></td>
+              <td style="color:var(--low);font-weight:600;font-size:12px;">Low</td>
+              <td><span class="prio-num">8</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11px;color:var(--text-dim);margin-top:10px;font-family:var(--mono);">
+        Effort: ● low (hours) &nbsp;●● medium (days) &nbsp;●●● high (sprint)
+      </p>
+    </section>
+
+    <!-- ── Scope & Methodology ─────────────────────────────────────────── -->
+    <section class="section" id="scope">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2 class="section-title">Scope &amp; Methodology</h2>
+      </div>
+      <div class="scope-box">
+        <p>
+          This report is the result of a <strong style="color:var(--text-bright);">manual source code review</strong>
+          of the EduTrack full-stack application. No dynamic testing, fuzzing, or penetration
+          testing was performed. Findings are based solely on static analysis of the codebase
+          as committed to the main branch.
+        </p>
+        <p>
+          <strong style="color:var(--text-bright);">Review date:</strong> April 18, 2026 &nbsp;·&nbsp;
+          <strong style="color:var(--text-bright);">Reviewer:</strong> Internal Engineering Team &nbsp;·&nbsp;
+          <strong style="color:var(--text-bright);">Stack:</strong>
+          <span class="scope-tag">Spring Boot 3.5.0</span>
+          <span class="scope-tag">Spring Security 6</span>
+          <span class="scope-tag">JJWT 0.12.5</span>
+          <span class="scope-tag">PostgreSQL</span>
+          <span class="scope-tag">React 18</span>
+          <span class="scope-tag">Vite</span>
+        </p>
+        <p>
+          <strong style="color:var(--text-bright);">Areas reviewed:</strong>
+          <span class="scope-tag">Authentication</span>
+          <span class="scope-tag">Authorization / RBAC</span>
+          <span class="scope-tag">Input Validation</span>
+          <span class="scope-tag">Session Management</span>
+          <span class="scope-tag">File Handling</span>
+          <span class="scope-tag">CORS</span>
+          <span class="scope-tag">Dependency Versions</span>
+          <span class="scope-tag">Frontend Token Storage</span>
+          <span class="scope-tag">SQL Injection</span>
+          <span class="scope-tag">IDOR</span>
+        </p>
+        <p style="color:var(--text-dim);font-size:12px;margin-top:18px;font-family:var(--mono);border-top:1px solid var(--border);padding-top:14px;">
+          This document is classified <strong style="color:var(--crit);">INTERNAL USE ONLY</strong>.
+          Do not distribute externally. Remediate critical findings before any public deployment.
+        </p>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+  // ── Filter ──────────────────────────────────────────────────────────────
+  let activeFilter = 'ALL';
+
+  function setFilter(f) {
+    activeFilter = f;
+
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.f === f);
+    });
+
+    const allCards = document.querySelectorAll('.finding-card');
+    let shown = 0;
+
+    allCards.forEach(card => {
+      const sev = card.dataset.sev;
+      const visible = f === 'ALL' || sev === f;
+      card.classList.toggle('hidden', !visible);
+      if (visible) shown++;
+    });
+
+    const countEl = document.getElementById('findingCount');
+    countEl.innerHTML = `<strong>${shown}</strong> finding${shown !== 1 ? 's' : ''} shown`;
+  }
+
+  // ── Card toggle ──────────────────────────────────────────────────────────
+  function toggleCard(head) {
+    const body   = head.nextElementSibling;
+    const toggle = head.querySelector('.card-toggle');
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+  }
+
+  // Open all cards by default for print / first-time view
+  // (collapsed by default, user expands)
+
+  // ── Copy chip ────────────────────────────────────────────────────────────
+  function copyChip(el) {
+    const text = el.childNodes[0].textContent.trim() +
+                 (el.querySelector('span[style]') ? el.querySelector('span[style]').textContent.trim() : '');
+    navigator.clipboard.writeText(text).then(() => {
+      el.classList.add('copied');
+      const icon = el.querySelector('.copy-icon');
+      const prev = icon.textContent;
+      icon.textContent = '✓';
+      setTimeout(() => {
+        el.classList.remove('copied');
+        icon.textContent = prev;
+      }, 1400);
+    }).catch(() => {});
+  }
+
+  // ── Hamburger ────────────────────────────────────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('open');
+  }
+
+  // Close sidebar on nav link click (mobile)
+  document.querySelectorAll('.nav-link').forEach(a => {
+    a.addEventListener('click', () => {
+      if (window.innerWidth <= 768) toggleSidebar();
+    });
+  });
+
+  // ── IntersectionObserver — section reveal ─────────────────────────────
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.06 });
+
+  document.querySelectorAll('.section').forEach(s => io.observe(s));
+
+  // ── Active nav highlight on scroll ───────────────────────────────────
+  const sections = document.querySelectorAll('.section, .finding-card[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const navObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        navLinks.forEach(l => {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  document.querySelectorAll('[id]').forEach(el => {
+    if (el.id) navObs.observe(el);
+  });
+
+  // ── Staggered card entrance ──────────────────────────────────────────
+  document.querySelectorAll('.finding-card').forEach((card, i) => {
+    card.style.transitionDelay = `${i * 35}ms`;
+  });
+</script>
+</body>
+</html>
