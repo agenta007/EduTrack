@@ -55,7 +55,6 @@ import SchoolComplaints from '../pages/Complaints/SchoolComplaints';
 import ClassComplaints from '../pages/Complaints/ClassComplaints';
 import StudentComplaints from '../pages/Complaints/StudentComplaints';
 
-
 function AppRouter() {
   return (
     <Routes>
