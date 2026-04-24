@@ -279,7 +279,7 @@ function Schedule() {
                 >
                   {schoolSlots.map(slot => {
                     const classConflict = entries.some(e =>
-                      e.term === form.term &&
+                      e.term === form.term && //if collision by term day and class then it's not free to schedule a lecture
                       e.dayOfWeek === form.dayOfWeek &&
                       fmtTime(e.startTime) === slot.startTime
                     );

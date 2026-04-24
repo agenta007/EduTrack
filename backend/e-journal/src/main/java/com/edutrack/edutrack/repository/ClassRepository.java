@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface ClassRepository extends JpaRepository<SchoolClass, Long> {
     // Retrieves all classes associated with a specific school
+    //fetches classes in a school
     List<SchoolClass> findAllBySchool_Id(Long schoolId);
 }
