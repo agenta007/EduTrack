@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -52,9 +54,17 @@ public class LocalhostAdminFilter extends OncePerRequestFilter {
                 && SecurityContextHolder.getContext().getAuthentication() == null
                 && LOOPBACK.contains(request.getRemoteAddr())) {
 
+            // Use a real UserDetails as the principal so that controllers declaring
+            // @AuthenticationPrincipal UserDetails receive a non-null value (a plain
+            // String principal would be injected as null and NPE downstream).
+            UserDetails principal = User.withUsername("localhost-admin")
+                    .password("")
+                    .authorities(ALL_ROLES)
+                    .build();
+
             // Grant full administrative authority to requests originating from localhost
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken("localhost-admin", null, ALL_ROLES)
+                    new UsernamePasswordAuthenticationToken(principal, null, ALL_ROLES)
             );
         }
 

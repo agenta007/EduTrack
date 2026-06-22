@@ -10,3 +10,4 @@ public interface ClassRepository extends JpaRepository<SchoolClass, Long> {
     //fetches classes in a school
     List<SchoolClass> findAllBySchool_Id(Long schoolId);
 }
+

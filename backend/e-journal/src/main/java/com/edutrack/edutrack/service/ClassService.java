@@ -3,9 +3,11 @@ package com.edutrack.e_journal.service;
 import com.edutrack.e_journal.dto.SchoolClassDto;
 import com.edutrack.e_journal.dto.UserSummaryDto;
 import com.edutrack.e_journal.entity.SchoolClass;
+import com.edutrack.e_journal.entity.Teacher;
 import com.edutrack.e_journal.entity.User;
 import com.edutrack.e_journal.repository.ClassRepository;
 import com.edutrack.e_journal.repository.StudentRepository;
+import com.edutrack.e_journal.repository.TeacherRepository;
 import com.edutrack.e_journal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,24 +23,40 @@ public class ClassService {
 
     private final ClassRepository   classRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private final UserRepository    userRepository;
     private final SchoolService     schoolService;
 
     public List<SchoolClassDto> getAll(UserDetails principal) {
-        // Determine if the current user has global administrative privileges
-        boolean isAdmin = principal.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (isAdmin) {
-            // Return all classes across all schools for the admin
+        // Admins see every class across all schools
+        if (hasRole(principal, "ROLE_ADMIN")) {
             return classRepository.findAll().stream().map(this::toDto).toList();
         }
-        // Load the headmaster entity associated with the authenticated user
-        User headmaster = userRepository.findByEmail(principal.getUsername())
+
+        // Load the authenticated user; required for both teacher and headmaster scoping
+        User user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        // Identify the specific school managed by this headmaster
-        Long schoolId = schoolService.resolveHeadmasterSchool(headmaster).getId();
-        // Filter classes to only those belonging to the headmaster's school
+
+        // Teachers are scoped to the classes of the school they are assigned to
+        if (hasRole(principal, "ROLE_TEACHER")) {
+            Teacher teacher = teacherRepository.findById(user.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "No teacher profile for this user"));
+            // A teacher not yet assigned to a school has no classes to show
+            if (teacher.getSchool() == null) return List.of();
+            return classRepository.findAllBySchool_Id(teacher.getSchool().getId())
+                    .stream().map(this::toDto).toList();
+        }
+
+        // Otherwise treat the user as a headmaster: classes of the school they direct
+        Long schoolId = schoolService.resolveHeadmasterSchool(user).getId();
         return classRepository.findAllBySchool_Id(schoolId).stream().map(this::toDto).toList();
+    }
+
+    private boolean hasRole(UserDetails principal, String role) {
+        // Check whether the authenticated principal carries the given granted authority
+        return principal.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(role));
     }
 
     public List<SchoolClassDto> getBySchool(Long schoolId) {
