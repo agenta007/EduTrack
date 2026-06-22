@@ -1,0 +1,599 @@
+================================================================================
+  EDUTRACK — TECHNICAL DOCUMENTATION
+================================================================================
+
+
+TABLE OF CONTENTS
+─────────────────
+  1. Project Overview
+  2. Architecture & Layers
+  3. JWT Authentication Flow
+  4. Security Configuration
+  5. Role System
+  6. REST API Reference
+  7. Frontend Routing
+  8. Request Lifecycle (end-to-end example)
+  9. Configuration Reference
+
+
+================================================================================
+  1. PROJECT OVERVIEW
+================================================================================
+
+EduTrack is a full-stack school management system (e-journal) for the Bulgarian
+education system. It supports multiple schools, each with its own headmaster,
+teachers, students, and parents. Data is organised by class, subject, term, and
+school year.
+
+  Tech Stack
+  ──────────
+  Backend    Java 25 · Spring Boot 3.5 · Spring Security · Spring Data JPA
+  Database   PostgreSQL
+  Auth       JWT via JJWT 0.12 · HttpOnly refresh-token cookie
+  Frontend   React 18 · Vite · Material UI · React Router · i18next
+  API Docs   SpringDoc OpenAPI  →  /swagger-ui.html
+
+
+================================================================================
+  2. ARCHITECTURE & LAYERS
+================================================================================
+
+  ┌──────────────────────────────────────────┐
+  │            React Frontend  :5173         │
+  │  Router · MUI · i18next · Axios          │
+  └──────────────────┬───────────────────────┘
+                     │ HTTP / JSON
+  ┌──────────────────▼───────────────────────┐
+  │          Spring Boot Backend  :8080      │
+  │                                          │
+  │  Filter Chain                            │
+  │    1. RequestLoggingFilter               │
+  │    2. LocalhostAdminFilter  (dev only)   │
+  │    3. JwtAuthenticationFilter            │
+  │                                          │
+  │  Controllers  (@RestController)          │
+  │    /auth  /api/schools  /api/grades      │
+  │    /api/users  /api/schedules  …         │
+  │                                          │
+  │  Services  (@Service)                    │
+  │    Business logic · ownership checks     │
+  │    DTO mapping                           │
+  │                                          │
+  │  Repositories  (Spring Data JPA)         │
+  │    JPA entities  →  PostgreSQL           │
+  └──────────────────────────────────────────┘
+
+  Package Layout
+  ──────────────
+  com.edutrack.e_journal
+  ├── config/        SecurityConfig, OpenApiConfig
+  ├── controller/    One controller per domain
+  ├── dto/           Request / response objects (Lombok)
+  ├── entity/        JPA entities (Lombok @Data / @Builder)
+  ├── repository/    Spring Data JPA interfaces
+  ├── security/      JWT utilities, filters, UserDetailsService
+  └── service/       Business logic
+
+
+================================================================================
+  3. JWT AUTHENTICATION FLOW
+================================================================================
+
+  LOGIN
+  ─────
+  Client                              Backend
+    │                                   │
+    │  POST /auth/login                 │
+    │  { email, password }              │
+    │──────────────────────────────────▶│
+    │                                   │  AuthenticationManager.authenticate()
+    │                                   │  BCrypt password check
+    │                                   │  generateAccessToken()   24 h
+    │                                   │  generateRefreshToken()   7 days
+    │                                   │  Set-Cookie: refreshToken
+    │                                   │              (HttpOnly, path=/auth)
+    │◀──────────────────────────────────│
+    │  { accessToken: "eyJ…" }          │
+
+
+  AUTHENTICATED REQUEST
+  ─────────────────────
+  Client                              Backend
+    │                                   │
+    │  GET /api/profile                 │
+    │  Authorization: Bearer eyJ…       │
+    │──────────────────────────────────▶│
+    │                                   │  JwtAuthenticationFilter:
+    │                                   │    1. Extract Authorization header
+    │                                   │    2. validateToken()  (sig + expiry)
+    │                                   │    3. getEmailFromToken()
+    │                                   │    4. CustomUserDetailsService
+    │                                   │         .loadUserByUsername(email)
+    │                                   │    5. Set SecurityContext
+    │                                   │  @PreAuthorize role check
+    │◀──────────────────────────────────│
+    │  200 { profile data }             │
+
+
+  TOKEN REFRESH
+  ─────────────
+  Client                              Backend
+    │                                   │
+    │  POST /auth/refresh               │
+    │  Cookie: refreshToken=eyJ…        │
+    │──────────────────────────────────▶│
+    │                                   │  Read cookie → validate
+    │                                   │  Extract email → load user
+    │                                   │  generateAccessToken()
+    │◀──────────────────────────────────│
+    │  { accessToken: "eyJ…" }          │
+
+
+  ACCESS TOKEN CLAIMS
+  ───────────────────
+  Claim    Value
+  ─────    ─────────────────────────────────────────────────────
+  sub      User's email address
+  id       User's database primary key (Long)
+  email    User's email address
+  role     ADMIN | HEADMASTER | TEACHER | STUDENT | PARENT
+  name     firstName + " " + lastName
+  iat      Issued-at (epoch seconds)
+  exp      iat + jwtExpirationInMs  (default 86400000 ms = 24 h)
+
+  Refresh token contains only: sub, iat, exp (7 days).
+
+  FRONTEND TOKEN HANDLING
+  ───────────────────────
+  • Access token is stored in localStorage.
+  • An Axios request interceptor attaches it as "Authorization: Bearer …"
+    to every outgoing API call.
+  • On a 401 response, the interceptor calls POST /auth/refresh using the
+    HttpOnly cookie, updates the stored token, and retries the original request.
+  • On logout or refresh failure, localStorage is cleared and the user is
+    redirected to /login.
+
+
+================================================================================
+  4. SECURITY CONFIGURATION
+================================================================================
+
+  FILTER CHAIN ORDER
+  ──────────────────
+  1. RequestLoggingFilter
+     Logs every request: method, path, status, duration, IP → requests.log
+
+  2. LocalhostAdminFilter  (development only)
+     When app.security.allow-localhost=true, any request from 127.0.0.1 / ::1
+     that has no Authorization header is automatically authenticated with all
+     five roles. MUST be set to false in production.
+
+  3. JwtAuthenticationFilter
+     Validates Bearer token, populates SecurityContext.
+
+  PUBLIC ENDPOINTS (no token required)
+  ─────────────────────────────────────
+  POST  /auth/login
+  POST  /auth/refresh
+  POST  /auth/logout
+  GET   /swagger-ui/**
+  GET   /swagger-ui.html
+  GET   /v3/api-docs/**
+
+  All other paths require a valid JWT.
+
+  CORS
+  ────
+  Allowed origin:   http://localhost:5173  (Vite dev server)
+  Allowed methods:  GET, POST, PUT, DELETE, OPTIONS
+  Credentials:      enabled  (required for the refresh-token cookie)
+
+  For production: update corsConfigurationSource() in SecurityConfig
+  to allow the real frontend domain.
+
+
+================================================================================
+  5. ROLE SYSTEM
+================================================================================
+
+  Role          Description
+  ────────────  ────────────────────────────────────────────────────────────────
+  ADMIN         Global superuser. Full access to all schools and all data.
+  HEADMASTER    Manages one school. Hires/fires staff, configures terms.
+  TEACHER       Records grades, absences, complaints for assigned classes.
+  STUDENT       Read-only access to own grades, absences, and complaints.
+  PARENT        Read-only access to their child's grades, absences, complaints.
+
+  Role is enforced at two levels:
+    • Method-level  — @PreAuthorize on controller methods.
+    • Service-level — ownership checks (e.g. a HEADMASTER may only modify
+                      their own school; a TEACHER may only add grades to
+                      classes assigned to them).
+
+
+================================================================================
+  6. REST API REFERENCE
+================================================================================
+
+  Base URL:  http://localhost:8080
+
+
+  ── AUTHENTICATION  /auth ──────────────────────────────────────────────────────
+
+  Method  Path             Description                             Auth
+  ──────  ───────────────  ──────────────────────────────────────  ──────────────
+  POST    /auth/login      Login. Returns access token; sets       Public
+                           7-day refresh cookie.
+  POST    /auth/refresh    Exchange refresh cookie for new token.  Public (cookie)
+  POST    /auth/logout     Clear refresh cookie.                   Public
+
+  LoginRequest:  { email, password }
+  AuthResponse:  { accessToken }
+
+
+  ── PROFILE  /api/profile ──────────────────────────────────────────────────────
+
+  Method  Path                      Description                         Auth
+  ──────  ────────────────────────  ──────────────────────────────────  ────────────────────
+  GET     /api/profile              Own full profile + school info       All authenticated
+  PUT     /api/profile/password     Change password (current required)   All authenticated
+  PUT     /api/profile/picture      Upload picture (multipart)           All authenticated
+  DELETE  /api/profile/picture      Remove profile picture               All authenticated
+  PUT     /api/profile/bio          Set / clear bio (max 500 chars)      All authenticated
+
+
+  ── SCHOOLS  /api/schools ──────────────────────────────────────────────────────
+
+  Method  Path                                   Description                         Auth
+  ──────  ─────────────────────────────────────  ──────────────────────────────────  ────────────────────────────
+  GET     /api/schools                           List all schools                    ADMIN
+  GET     /api/schools/{id}                      Get school by ID                    ADMIN, HEADMASTER, TEACHER
+  POST    /api/schools                           Create school                       ADMIN
+  PUT     /api/schools/{id}                      Full update                         ADMIN
+  PATCH   /api/schools/{id}/info                 Update name / address only          ADMIN, HEADMASTER
+  DELETE  /api/schools/{id}                      Delete school                       ADMIN
+  GET     /api/schools/{schoolId}/profiles       List specialisation profiles        ADMIN, HEADMASTER, TEACHER
+  POST    /api/schools/{schoolId}/profiles       Add specialisation profile          ADMIN
+  DELETE  /api/schools/profiles/{profileId}      Remove specialisation profile       ADMIN
+  GET     /api/schools/{schoolId}/schedule       Get daily bell schedule             ADMIN, HEADMASTER, TEACHER
+  POST    /api/schools/{schoolId}/schedule       Add bell-schedule entry             ADMIN, HEADMASTER
+  PUT     /api/schools/schedule/{entryId}        Update bell-schedule entry          ADMIN, HEADMASTER
+  DELETE  /api/schools/schedule/{entryId}        Delete bell-schedule entry          ADMIN, HEADMASTER
+  GET     /api/schools/{schoolId}/term-config    Get term date configuration         ADMIN, HEADMASTER, TEACHER
+  PUT     /api/schools/{schoolId}/term-config    Set term dates                      ADMIN, HEADMASTER
+  PUT     /api/schools/{schoolId}/student-limit  Set maximum student count           ADMIN, HEADMASTER
+
+  Note: all HEADMASTER endpoints verify the school belongs to the calling user.
+
+
+  ── USERS  /api/users ──────────────────────────────────────────────────────────
+
+  Method  Path                                      Description                     Auth
+  ──────  ────────────────────────────────────────  ──────────────────────────────  ──────────────────
+  GET     /api/users                                List all users                  ADMIN
+  GET     /api/users/teachers/school/{schoolId}     Teachers at school (id+name)    ADMIN, HEADMASTER
+  GET     /api/users/students/school/{schoolId}     Students at school              ADMIN, HEADMASTER
+  GET     /api/users/parents/school/{schoolId}      Parents at school               ADMIN, HEADMASTER
+  GET     /api/users/headmasters                    All headmasters (id+name)       ADMIN
+  GET     /api/users/{id}/picture                   Raw profile picture bytes       Public
+  POST    /api/users                                Create user                     ADMIN
+  PUT     /api/users/{id}                           Update user                     ADMIN
+  DELETE  /api/users/{id}                           Delete user                     ADMIN
+
+
+  ── TEACHERS  /api/teachers ────────────────────────────────────────────────────
+
+  Method  Path                                          Description                          Auth
+  ──────  ────────────────────────────────────────────  ───────────────────────────────────  ──────────────────
+  GET     /api/teachers/school/{schoolId}               Teachers with salary+qualifications  ADMIN, HEADMASTER
+  GET     /api/teachers/available                       Unhired TEACHER-role users           HEADMASTER
+  POST    /api/teachers/create-and-hire                 Create user + hire in one step       HEADMASTER
+  POST    /api/teachers/{userId}/hire                   Hire existing user                   HEADMASTER
+  DELETE  /api/teachers/{teacherId}/fire                Fire teacher from school             HEADMASTER
+  PUT     /api/teachers/{teacherId}/salary              Set monthly salary                   HEADMASTER
+  PUT     /api/teachers/{teacherId}/qualifications      Set subject qualifications           HEADMASTER
+
+
+  ── STUDENTS  /api/students ────────────────────────────────────────────────────
+
+  Method  Path                                   Description                        Auth
+  ──────  ─────────────────────────────────────  ─────────────────────────────────  ──────────
+  GET     /api/students/available                Unenrolled STUDENT-role users      HEADMASTER
+  POST    /api/students/{userId}/enroll          Enroll student in school           HEADMASTER
+  DELETE  /api/students/{studentId}/expel        Expel student from school          HEADMASTER
+
+
+  ── PARENTS  /api/parents ──────────────────────────────────────────────────────
+
+  Method  Path                                            Description                  Auth
+  ──────  ──────────────────────────────────────────────  ───────────────────────────  ──────────────────
+  GET     /api/parents/school/{schoolId}                  Parents at school            ADMIN, HEADMASTER
+  GET     /api/parents/available                          All PARENT-role users        HEADMASTER
+  POST    /api/parents/{parentId}/link/{studentId}        Link parent to student       HEADMASTER
+  DELETE  /api/parents/{parentId}/unlink/{studentId}      Unlink parent from student   HEADMASTER
+  PUT     /api/parents/{parentId}                         Update parent name/email     HEADMASTER
+
+
+  ── CLASSES  /api/classes ──────────────────────────────────────────────────────
+
+  Method  Path                             Description                     Auth
+  ──────  ───────────────────────────────  ──────────────────────────────  ──────────────────────────────────────────
+  GET     /api/classes                     List all classes                ADMIN, HEADMASTER, TEACHER
+  GET     /api/classes/school/{schoolId}   Classes at school               ADMIN, HEADMASTER
+  GET     /api/classes/{id}               Get class details               ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+  GET     /api/classes/{id}/students      Students in class (id+name)     ADMIN, HEADMASTER, TEACHER
+
+
+  ── SCHEDULES (curriculum)  /api/schedules ─────────────────────────────────────
+
+  Each entry = one subject taught by one teacher to one class on a given
+  day of the week in a given term.
+
+  Method  Path                                Description                              Auth
+  ──────  ──────────────────────────────────  ───────────────────────────────────────  ──────────────────────────────────────────
+  GET     /api/schedules/class/{classId}      Curriculum for class                     ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+  GET     /api/schedules/teacher/{teacherId}  Curriculum for teacher                   ADMIN, HEADMASTER
+  GET     /api/schedules/teacher/me           Own curriculum                           TEACHER
+  POST    /api/schedules                      Add curriculum entry                     ADMIN, HEADMASTER
+  PATCH   /api/schedules/{id}/type            Change lecture type                      ADMIN, HEADMASTER
+                                              (STANDARD / SIP / EXTRACURRICULAR)
+  DELETE  /api/schedules/{id}                 Remove curriculum entry                  ADMIN, HEADMASTER
+
+
+  ── GRADES  /api/grades ────────────────────────────────────────────────────────
+
+  Bulgarian grading scale: 2 · 2.5 · 3 · 3.5 · 4 · 4.5 · 5 · 5.5 · 6
+
+  Method  Path                                Description                     Auth
+  ──────  ──────────────────────────────────  ──────────────────────────────  ──────────────────────────────────
+  GET     /api/grades/class/{classId}         All grades for a class          ADMIN, HEADMASTER, TEACHER
+  GET     /api/grades/student/me              Own grades                      STUDENT
+  GET     /api/grades/student/{studentId}     Grades for a specific student   ADMIN, HEADMASTER, TEACHER, PARENT
+  POST    /api/grades                         Add grade                       ADMIN, HEADMASTER, TEACHER
+  DELETE  /api/grades/{id}                    Remove grade                    ADMIN, HEADMASTER, TEACHER
+
+
+  ── ABSENCES  /api/absences ────────────────────────────────────────────────────
+
+  Method  Path                                  Description                     Auth
+  ──────  ────────────────────────────────────  ──────────────────────────────  ──────────────────────────────────
+  GET     /api/absences/class/{classId}         All absences for a class        ADMIN, HEADMASTER, TEACHER
+  GET     /api/absences/student/me              Own absences                    STUDENT
+  GET     /api/absences/student/{studentId}     Absences for a student          ADMIN, HEADMASTER, TEACHER, PARENT
+  POST    /api/absences                         Record absence                  ADMIN, HEADMASTER, TEACHER
+  PUT     /api/absences/{id}/excuse             Toggle excused / unexcused      ADMIN, HEADMASTER, TEACHER
+  DELETE  /api/absences/{id}                    Delete absence record           ADMIN, HEADMASTER, TEACHER
+
+
+  ── COMPLAINTS  /api/complaints ────────────────────────────────────────────────
+
+  Method  Path                                    Description                     Auth
+  ──────  ──────────────────────────────────────  ──────────────────────────────  ──────────────────────────────────
+  GET     /api/complaints/class/{classId}         All complaints for a class      ADMIN, HEADMASTER, TEACHER
+  GET     /api/complaints/student/me              Own complaints                  STUDENT
+  GET     /api/complaints/student/{studentId}     Complaints for a student        ADMIN, HEADMASTER, TEACHER, PARENT
+  POST    /api/complaints                         File complaint                  ADMIN, HEADMASTER, TEACHER
+  DELETE  /api/complaints/{id}                    Delete complaint                ADMIN, HEADMASTER, TEACHER
+
+
+  ── SUBJECTS  /api/subjects ────────────────────────────────────────────────────
+
+  Method  Path                  Description          Auth
+  ──────  ────────────────────  ───────────────────  ──────────────────
+  GET     /api/subjects         List all subjects    ADMIN, HEADMASTER
+  POST    /api/subjects         Create subject       ADMIN
+  PUT     /api/subjects/{id}    Rename subject       ADMIN
+  DELETE  /api/subjects/{id}    Delete subject       ADMIN
+
+
+================================================================================
+  7. FRONTEND ROUTING
+================================================================================
+
+  AUTHENTICATION & REDIRECT
+  ─────────────────────────
+  On app load, AuthProvider decodes the stored access token from localStorage
+  and populates the auth context (id, email, role, name).
+
+  Every protected route is wrapped in ProtectedRoute, which:
+    • Redirects to /login if the user is not authenticated.
+    • Redirects to /unauthorized if the user's role is not in the allowed list.
+
+  The root path "/" renders RoleRedirect, which sends the user to:
+    ADMIN       →  /admin
+    HEADMASTER  →  /headmaster
+    TEACHER     →  /teacher
+    STUDENT     →  /student
+    PARENT      →  /parent
+
+
+  PUBLIC ROUTES
+  ─────────────
+  /login          Login page
+  /unauthorized   Access-denied page
+
+
+  PROFILE  (all authenticated roles)
+  ───────
+  /profile
+
+
+  ADMIN ROUTES
+  ────────────
+  /admin                  AdminHome
+  /admin/manageUsers      User management
+  /admin/viewSchools      School list
+  /admin/viewSubjects     Subject list  (also HEADMASTER)
+
+
+  HEADMASTER ROUTES
+  ─────────────────
+  /headmaster                HeadmasterHome
+  /headmaster/mySchool       Manage own school
+  /headmaster/viewParents    Parents at school
+  /headmaster/viewStudents   Students at school
+  /headmaster/viewTeachers   Teachers at school
+
+
+  TEACHER ROUTES
+  ──────────────
+  /teacher                              TeacherHome
+  /teacher/school                       View school info
+  /teacher/teacherSchedule/:teacherId   Own schedule
+
+
+  STUDENT / PARENT ROUTES
+  ───────────────────────
+  /student    StudentHome
+  /parent     ParentHome
+
+
+  SHARED — SCHEDULE
+  ─────────────────
+  /schedule/:classId     ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+
+
+  SHARED — GRADES
+  ───────────────
+  /grades                          ADMIN
+  /grades/school/:schoolId         ADMIN, HEADMASTER
+  /grades/class/:classId           ADMIN, HEADMASTER, TEACHER
+  /grades/student/:studentId       ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+  /grades/me                       STUDENT
+
+
+  SHARED — ABSENCES
+  ─────────────────
+  /absences                        ADMIN
+  /absences/school/:schoolId       ADMIN, HEADMASTER
+  /absences/class/:classId         ADMIN, HEADMASTER, TEACHER
+  /absences/student/:studentId     ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+  /absences/me                     STUDENT
+
+
+  SHARED — COMPLAINTS
+  ───────────────────
+  /complaints                      ADMIN
+  /complaints/school/:schoolId     ADMIN, HEADMASTER
+  /complaints/class/:classId       ADMIN, HEADMASTER, TEACHER
+  /complaints/student/:studentId   ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT
+
+
+  STATISTICS
+  ──────────
+  /statistics/school/:schoolId     ADMIN, HEADMASTER
+  /statistics/subject/:subjectId   ADMIN, HEADMASTER
+  /statistics/teacher/:teacherId   ADMIN, HEADMASTER
+
+
+  SELECTION HELPERS (picker pages)
+  ────────────────────────────────
+  /select/school/statistics        ADMIN
+  /select/teacher/statistics       ADMIN, HEADMASTER
+  /select/subject/statistics       ADMIN, HEADMASTER
+  /select/class/schedule           ADMIN, HEADMASTER
+  /select/class/grades             ADMIN, HEADMASTER, TEACHER
+  /select/class/absences           ADMIN, HEADMASTER, TEACHER
+  /select/class/complaints         ADMIN, TEACHER
+
+
+================================================================================
+  8. REQUEST LIFECYCLE  (end-to-end example)
+================================================================================
+
+  Scenario: a teacher submits a grade.
+
+  1. Teacher clicks "Add grade" in ClassGrades.jsx.
+
+  2. React sends:
+       POST /api/grades
+       Authorization: Bearer eyJhbGciOiJIUzI1…
+       Content-Type: application/json
+       { studentId: 42, scheduleId: 7, value: 5.5 }
+
+  3. RequestLoggingFilter: begins timing the request.
+
+  4. LocalhostAdminFilter: Authorization header present → skip bypass.
+
+  5. JwtAuthenticationFilter:
+       a. Extracts token from "Authorization: Bearer …"
+       b. JwtUtils.validateToken() — checks HMAC signature + expiry → OK
+       c. JwtUtils.getEmailFromToken() → "teacher@school.bg"
+       d. CustomUserDetailsService.loadUserByUsername("teacher@school.bg")
+          → loads User from DB, wraps in UserDetails with role TEACHER
+       e. Sets SecurityContext with UsernamePasswordAuthenticationToken
+
+  6. Spring Security evaluates @PreAuthorize on GradeController.addGrade():
+       hasRole('TEACHER') or hasRole('ADMIN') or hasRole('HEADMASTER') → PASS
+
+  7. GradeController.addGrade() delegates to GradeService.addGrade():
+       • Validates schedule entry exists
+       • Validates student exists
+       • Validates value is in {2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6}
+       • Saves new Grade entity via GradeRepository
+
+  8. Response:
+       201 Created
+       { id, studentId, subjectId, value, term, date, … }
+
+  9. RequestLoggingFilter writes to requests.log:
+       POST /api/grades → 201  (12 ms)  [127.0.0.1]
+
+  10. React appends the new grade chip to the table without a page reload.
+
+
+================================================================================
+  9. CONFIGURATION REFERENCE
+================================================================================
+
+  File: backend/e-journal/src/main/resources/application.properties
+
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │ spring.application.name=e-journal                                       │
+  │                                                                         │
+  │ # Database                                                              │
+  │ spring.datasource.url=jdbc:postgresql://localhost:5432/ejournal         │
+  │ spring.datasource.username=ejournal_usr                                 │
+  │ spring.datasource.password=ejournal_pwd                                 │
+  │ spring.datasource.driver-class-name=org.postgresql.Driver              │
+  │                                                                         │
+  │ # JPA / Hibernate                                                       │
+  │ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect   │
+  │ spring.jpa.show-sql=false                                               │
+  │ spring.jpa.hibernate.ddl-auto=update                                    │
+  │ spring.jpa.open-in-view=true                                            │
+  │                                                                         │
+  │ # JWT                                                                   │
+  │ app.jwtSecret=<at-least-64-char-secret>                                 │
+  │ app.jwtExpirationInMs=86400000      # 24 h (access token)              │
+  │                                     # refresh token is always 7 days   │
+  │                                                                         │
+  │ # Security                                                              │
+  │ app.security.allow-localhost=true   # false in production!             │
+  │                                                                         │
+  │ # Logging                                                               │
+  │ app.logging.path=logs                                                   │
+  │ logging.config=classpath:logback-spring.xml                             │
+  └─────────────────────────────────────────────────────────────────────────┘
+
+  LOG FILES  (written to app.logging.path directory)
+  ─────────
+  e-journal.log   Full application log (INFO+), rotated daily, 30-day retention
+  requests.log    One line per HTTP request: method · path · status · ms · IP
+                  Rotated daily, 14-day retention.
+
+  PRODUCTION CHECKLIST
+  ────────────────────
+  □  Set app.security.allow-localhost=false
+  □  Use a random JWT secret of at least 64 characters
+  □  Update CORS allowed origins in SecurityConfig to the real domain
+  □  Set spring.jpa.hibernate.ddl-auto=validate  (not update or create)
+  □  Run as a dedicated low-privilege system user
+     (see configure-debian.sh for the systemd service setup)
+  □  Serve the React build (frontend/dist/) via nginx or similar reverse proxy
+  □  Point the Vite proxy (or nginx) to backend :8080
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

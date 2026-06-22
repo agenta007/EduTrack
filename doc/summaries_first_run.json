@@ -1,0 +1,7 @@
+{
+  "backend/e-journal/src/main/java/com/edutrack/e_journal/EJournalApplication.java": "",
+  "backend/e-journal/src/main/java/com/edutrack/e_journal/config/OpenApiConfig.java": "",
+  "backend/e-journal/src/main/java/com/edutrack/e_journal/config/SecurityConfig.java": "",
+  "backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AbsenceController.java": "",
+  "backend/e-journal/src/main/java/com/edutrack/e_journal/controller/AuthController.java": "This controller handles user authentication for the EduTrack system by managing login, token refresh, and logout operations. It uses Spring Security to validate credentials and generates short-lived access tokens along with long-lived refresh tokens stored in HttpOnly cookies. The login endpoint authenticates users and returns an access token while setting a seven-day refresh cookie. The refresh endpoint allows clients to obtain new access tokens without re-entering credentials by validating the existing refresh cookie. The logout endpoint clears the refresh cookie to terminate the session. This design ensures secure stateless authentication while maintaining user convenience through token rotation."
+}

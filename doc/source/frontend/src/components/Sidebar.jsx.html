@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Sidebar.jsx</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This component renders the application&#x27;s navigation sidebar, dynamically adjusting its layout and visibility for both desktop and mobile views. It utilizes role-based logic to display specific menu items for administrators, headmasters, teachers, and parents, ensuring users only see relevant sections of the EduTrack system. The sidebar manages its own open and closed states while integrating with global contexts for authentication, student selection, and translation support. It handles nested submenus and responsive interactions, such as toggling menus on touch devices versus hover effects on desktop. By linking to various routes like grades, schedules, and profiles, it serves as the primary interface for navigating between different modules of the school e-journal.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">import</span> React, { useState } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span>;</td></tr>
+<tr><td class="ln">2</td><td class="code"><span class="kw">import</span> {</td></tr>
+<tr><td class="ln">3</td><td class="code">Box,</td></tr>
+<tr><td class="ln">4</td><td class="code">Drawer,</td></tr>
+<tr><td class="ln">5</td><td class="code">AppBar,</td></tr>
+<tr><td class="ln">6</td><td class="code">Toolbar,</td></tr>
+<tr><td class="ln">7</td><td class="code">List,</td></tr>
+<tr><td class="ln">8</td><td class="code">IconButton,</td></tr>
+<tr><td class="ln">9</td><td class="code">ListItem,</td></tr>
+<tr><td class="ln">10</td><td class="code">ListItemButton,</td></tr>
+<tr><td class="ln">11</td><td class="code">ListItemIcon,</td></tr>
+<tr><td class="ln">12</td><td class="code">ListItemText,</td></tr>
+<tr><td class="ln">13</td><td class="code">useTheme,</td></tr>
+<tr><td class="ln">14</td><td class="code">Collapse,</td></tr>
+<tr><td class="ln">15</td><td class="code">ToggleButtonGroup,</td></tr>
+<tr><td class="ln">16</td><td class="code">ToggleButton,</td></tr>
+<tr><td class="ln">17</td><td class="code">} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/material&#x27;</span>;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> {</td></tr>
+<tr><td class="ln">19</td><td class="code">Menu as MenuIcon,</td></tr>
+<tr><td class="ln">20</td><td class="code">Home as HomeIcon,</td></tr>
+<tr><td class="ln">21</td><td class="code">BarChart as StatsIcon,</td></tr>
+<tr><td class="ln">22</td><td class="code">ManageAccounts,</td></tr>
+<tr><td class="ln">23</td><td class="code">CalendarMonth as ScheduleIcon,</td></tr>
+<tr><td class="ln">24</td><td class="code">Book as SubjectIcon,</td></tr>
+<tr><td class="ln">25</td><td class="code">Business as SchoolIcon,</td></tr>
+<tr><td class="ln">26</td><td class="code">Grade,</td></tr>
+<tr><td class="ln">27</td><td class="code">EventBusy as AbsenceIcon,</td></tr>
+<tr><td class="ln">28</td><td class="code">Report as ComplaintIcon,</td></tr>
+<tr><td class="ln">29</td><td class="code">Logout,</td></tr>
+<tr><td class="ln">30</td><td class="code">Work as Teacher,</td></tr>
+<tr><td class="ln">31</td><td class="code">EscalatorWarning as ParentIcon,</td></tr>
+<tr><td class="ln">32</td><td class="code">School as StudentIcon,</td></tr>
+<tr><td class="ln">33</td><td class="code">ChevronLeft as ChevronLeftIcon,</td></tr>
+<tr><td class="ln">34</td><td class="code">AccountCircle as ProfileIcon,</td></tr>
+<tr><td class="ln">35</td><td class="code">} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/icons-material&#x27;</span>;</td></tr>
+<tr><td class="ln">36</td><td class="code"></td></tr>
+<tr><td class="ln">37</td><td class="code"><span class="kw">import</span> logo <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../public/EduTrack_logo_positive.svg&#x27;</span>;</td></tr>
+<tr><td class="ln">38</td><td class="code"><span class="kw">import</span> useAuth <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../hooks/useAuth&#x27;</span>;</td></tr>
+<tr><td class="ln">39</td><td class="code"><span class="kw">import</span> { useMediaQuery } <span class="kw">from</span> <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="ann">@mui</span>/material&quot;</span>;</td></tr>
+<tr><td class="ln">40</td><td class="code"><span class="kw">import</span> { Link } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-router-dom&#x27;</span>;</td></tr>
+<tr><td class="ln">41</td><td class="code"><span class="kw">import</span> { useStudent } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../context/StudentContext&#x27;</span>;</td></tr>
+<tr><td class="ln">42</td><td class="code"><span class="kw">import</span> { useTranslation } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-i18next&#x27;</span>;</td></tr>
+<tr><td class="ln">43</td><td class="code"><span class="kw">import</span> { useSidebar } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../context/SidebarContext&#x27;</span>;</td></tr>
+<tr><td class="ln">44</td><td class="code"><span class="kw">import</span> <span <span class="kw">class</span>="str">&#x27;../styles/sidebar.css&#x27;</span>;</td></tr>
+<tr><td class="ln">45</td><td class="code"></td></tr>
+<tr><td class="ln">46</td><td class="code"><span class="kw">const</span> drawerWidth = <span <span class="kw">class</span>="num">240</span>;</td></tr>
+<tr><td class="ln">47</td><td class="code"></td></tr>
+<tr><td class="ln">48</td><td class="code"><span class="kw">const</span> Sidebar = () =&gt; {</td></tr>
+<tr><td class="ln">49</td><td class="code">    <span class="kw">const</span> { user } = useAuth();</td></tr>
+<tr><td class="ln">50</td><td class="code">    <span class="kw">const</span> { t, i18n } = useTranslation();</td></tr>
+<tr><td class="ln">51</td><td class="code"></td></tr>
+<tr><td class="ln">52</td><td class="code">    <span class="kw">const</span> { students, setSelectedStudent } = useStudent();</td></tr>
+<tr><td class="ln">53</td><td class="code">    <span class="kw">const</span> { desktopOpen, setDesktopOpen } = useSidebar();</td></tr>
+<tr><td class="ln">54</td><td class="code"></td></tr>
+<tr><td class="ln">55</td><td class="code">    <span class="kw">const</span> [mobileOpen, setMobileOpen] = useState(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">56</td><td class="code">    <span class="kw">const</span> theme = useTheme();</td></tr>
+<tr><td class="ln">57</td><td class="code">    <span class="kw">const</span> isMobile = useMediaQuery(theme.breakpoints.down(<span <span class="kw">class</span>="str">&quot;md&quot;</span>));</td></tr>
+<tr><td class="ln">58</td><td class="code"></td></tr>
+<tr><td class="ln">59</td><td class="code">    <span class="kw">const</span> [openMenu, setOpenMenu] = useState(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">60</td><td class="code"></td></tr>
+<tr><td class="ln">61</td><td class="code">    <span class="kw">const</span> handleParentEnter = (key) =&gt; {</td></tr>
+<tr><td class="ln">62</td><td class="code">        <span class="kw">if</span> (!isMobile) setOpenMenu(key);</td></tr>
+<tr><td class="ln">63</td><td class="code">    };</td></tr>
+<tr><td class="ln">64</td><td class="code"></td></tr>
+<tr><td class="ln">65</td><td class="code">    <span class="kw">const</span> handleParentLeave = () =&gt; {</td></tr>
+<tr><td class="ln">66</td><td class="code">        <span class="kw">if</span> (!isMobile) setOpenMenu(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">67</td><td class="code">    };</td></tr>
+<tr><td class="ln">68</td><td class="code"></td></tr>
+<tr><td class="ln">69</td><td class="code">    <span class="kw">const</span> handleParentClick = (key, hasSubmenu) =&gt; {</td></tr>
+<tr><td class="ln">70</td><td class="code">        <span class="kw">if</span> (isMobile &amp;&amp; hasSubmenu) {</td></tr>
+<tr><td class="ln">71</td><td class="code">            setOpenMenu(openMenu === key ? <span class="kw">null</span> : key);</td></tr>
+<tr><td class="ln">72</td><td class="code">        }</td></tr>
+<tr><td class="ln">73</td><td class="code">    };</td></tr>
+<tr><td class="ln">74</td><td class="code"></td></tr>
+<tr><td class="ln">75</td><td class="code">    <span class="kw">const</span> handleDrawerToggle = () =&gt; {</td></tr>
+<tr><td class="ln">76</td><td class="code">        setMobileOpen(!mobileOpen);</td></tr>
+<tr><td class="ln">77</td><td class="code">    };</td></tr>
+<tr><td class="ln">78</td><td class="code"></td></tr>
+<tr><td class="ln">79</td><td class="code">    <span class="kw">const</span> menuItems = {</td></tr>
+<tr><td class="ln">80</td><td class="code">        ADMIN : [</td></tr>
+<tr><td class="ln">81</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;home&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.home&#x27;</span>), icon: &lt;HomeIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/&quot;</span>},</td></tr>
+<tr><td class="ln">82</td><td class="code">            {</td></tr>
+<tr><td class="ln">83</td><td class="code">                key: <span <span class="kw">class</span>="str">&quot;statistics&quot;</span>,</td></tr>
+<tr><td class="ln">84</td><td class="code">                label: t(<span <span class="kw">class</span>="str">&#x27;nav.statistics&#x27;</span>),</td></tr>
+<tr><td class="ln">85</td><td class="code">                icon: &lt;StatsIcon /&gt;,</td></tr>
+<tr><td class="ln">86</td><td class="code">                submenu: [</td></tr>
+<tr><td class="ln">87</td><td class="code">                    {key: <span <span class="kw">class</span>="str">&quot;schoolStats&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schoolStatistics&#x27;</span>), to: <span <span class="kw">class</span>="str">&quot;/select/school/statistics&quot;</span>},</td></tr>
+<tr><td class="ln">88</td><td class="code">                    {key: <span <span class="kw">class</span>="str">&quot;teacherStats&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.teacherStatistics&#x27;</span>), to: <span <span class="kw">class</span>="str">&quot;/select/teacher/statistics&quot;</span>},</td></tr>
+<tr><td class="ln">89</td><td class="code">                    {key: <span <span class="kw">class</span>="str">&quot;subjectStats&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.subjectStatistics&#x27;</span>), to: <span <span class="kw">class</span>="str">&quot;/select/subject/statistics&quot;</span>}</td></tr>
+<tr><td class="ln">90</td><td class="code">                ]</td></tr>
+<tr><td class="ln">91</td><td class="code">            },</td></tr>
+<tr><td class="ln">92</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schools&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schools&#x27;</span>), icon: &lt;SchoolIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/admin/viewSchools&quot;</span>},</td></tr>
+<tr><td class="ln">93</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;manageUsers&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.manageUsers&#x27;</span>), icon: &lt;ManageAccounts /&gt;, to: <span <span class="kw">class</span>="str">&quot;/admin/manageUsers&quot;</span>},</td></tr>
+<tr><td class="ln">94</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schedules&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedules&#x27;</span>), icon: &lt;ScheduleIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/schedule&quot;</span>},</td></tr>
+<tr><td class="ln">95</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;subjects&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.subjects&#x27;</span>), icon: &lt;SubjectIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/admin/viewSubjects&quot;</span>},</td></tr>
+<tr><td class="ln">96</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;profile&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>), icon: &lt;ProfileIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/profile&quot;</span>},</td></tr>
+<tr><td class="ln">97</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;logout&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.logout&#x27;</span>), icon: &lt;Logout /&gt;, to: <span <span class="kw">class</span>="str">&quot;/login&quot;</span>}</td></tr>
+<tr><td class="ln">98</td><td class="code">        ],</td></tr>
+<tr><td class="ln">99</td><td class="code">        HEADMASTER : [</td></tr>
+<tr><td class="ln">100</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;home&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.home&#x27;</span>), icon: &lt;HomeIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/&quot;</span>},</td></tr>
+<tr><td class="ln">101</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;mySchool&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.mySchool&#x27;</span>), icon: &lt;SchoolIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/headmaster/mySchool&quot;</span>},</td></tr>
+<tr><td class="ln">102</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schedules&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedules&#x27;</span>), icon: &lt;ScheduleIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/schedule&quot;</span>},</td></tr>
+<tr><td class="ln">103</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;subjects&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.subjects&#x27;</span>), icon: &lt;SubjectIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/admin/viewSubjects&quot;</span>},</td></tr>
+<tr><td class="ln">104</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;grades&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>), icon: &lt;Grade /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/grades&quot;</span>},</td></tr>
+<tr><td class="ln">105</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;absences&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/absences&quot;</span>},</td></tr>
+<tr><td class="ln">106</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;teachers&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.teachers&#x27;</span>), icon: &lt;Teacher /&gt;, to: <span <span class="kw">class</span>="str">&quot;/headmaster/viewTeachers&quot;</span>},</td></tr>
+<tr><td class="ln">107</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;parents&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.parents&#x27;</span>), icon: &lt;ParentIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/headmaster/viewParents&quot;</span>},</td></tr>
+<tr><td class="ln">108</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;students&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.students&#x27;</span>), icon: &lt;StudentIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/headmaster/viewStudents&quot;</span>},</td></tr>
+<tr><td class="ln">109</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;profile&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>), icon: &lt;ProfileIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/profile&quot;</span>},</td></tr>
+<tr><td class="ln">110</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;logout&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.logout&#x27;</span>), icon: &lt;Logout /&gt;, to: <span <span class="kw">class</span>="str">&quot;/login&quot;</span>}</td></tr>
+<tr><td class="ln">111</td><td class="code">        ],</td></tr>
+<tr><td class="ln">112</td><td class="code">        TEACHER : [</td></tr>
+<tr><td class="ln">113</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;home&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.home&#x27;</span>), icon: &lt;HomeIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/&quot;</span>},</td></tr>
+<tr><td class="ln">114</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;mySchool&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.mySchool&#x27;</span>), icon: &lt;SchoolIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/teacher/school&quot;</span>},</td></tr>
+<tr><td class="ln">115</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schedule&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedule&#x27;</span>), icon: &lt;ScheduleIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/teacher/teacherSchedule/:teacherId&quot;</span>},</td></tr>
+<tr><td class="ln">116</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;grades&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>), icon: &lt;Grade /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/grades&quot;</span>},</td></tr>
+<tr><td class="ln">117</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;absences&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/absences&quot;</span>},</td></tr>
+<tr><td class="ln">118</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;complaints&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.complaints&#x27;</span>), icon: &lt;ComplaintIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/select/<span class="kw">class</span>/complaints&quot;</span>},</td></tr>
+<tr><td class="ln">119</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;profile&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>), icon: &lt;ProfileIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/profile&quot;</span>},</td></tr>
+<tr><td class="ln">120</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;logout&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.logout&#x27;</span>), icon: &lt;Logout /&gt;, to: <span <span class="kw">class</span>="str">&quot;/login&quot;</span>}</td></tr>
+<tr><td class="ln">121</td><td class="code">        ],</td></tr>
+<tr><td class="ln">122</td><td class="code">        PARENT: [</td></tr>
+<tr><td class="ln">123</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;home&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.home&#x27;</span>), icon: &lt;HomeIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/&quot;</span>},</td></tr>
+<tr><td class="ln">124</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schedule&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedule&#x27;</span>), icon: &lt;ScheduleIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/schedule/:classId&quot;</span>},</td></tr>
+<tr><td class="ln">125</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;grades&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>), icon: &lt;Grade /&gt;, to: <span <span class="kw">class</span>="str">&quot;/grades/me&quot;</span>},</td></tr>
+<tr><td class="ln">126</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;absences&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/absences/me&quot;</span>},</td></tr>
+<tr><td class="ln">127</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;complaints&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.complaints&#x27;</span>), icon: &lt;ComplaintIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/complaints/:studentId&quot;</span>},</td></tr>
+<tr><td class="ln">128</td><td class="code">            {</td></tr>
+<tr><td class="ln">129</td><td class="code">                key: <span <span class="kw">class</span>="str">&quot;viewStudent&quot;</span>,</td></tr>
+<tr><td class="ln">130</td><td class="code">                label: t(<span <span class="kw">class</span>="str">&#x27;nav.viewStudent&#x27;</span>),</td></tr>
+<tr><td class="ln">131</td><td class="code">                icon: &lt;StudentIcon /&gt;,</td></tr>
+<tr><td class="ln">132</td><td class="code">                submenu: students.map(s =&gt; ({</td></tr>
+<tr><td class="ln">133</td><td class="code">                    label: s.name,</td></tr>
+<tr><td class="ln">134</td><td class="code">                    key: s.id,</td></tr>
+<tr><td class="ln">135</td><td class="code">                    to: <span <span class="kw">class</span>="str">&quot;#&quot;</span>,</td></tr>
+<tr><td class="ln">136</td><td class="code">                    onClick: () =&gt; setSelectedStudent(s)</td></tr>
+<tr><td class="ln">137</td><td class="code">                }))</td></tr>
+<tr><td class="ln">138</td><td class="code">            },</td></tr>
+<tr><td class="ln">139</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;profile&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>), icon: &lt;ProfileIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/profile&quot;</span>},</td></tr>
+<tr><td class="ln">140</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;logout&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.logout&#x27;</span>), icon: &lt;Logout /&gt;, to: <span <span class="kw">class</span>="str">&quot;/login&quot;</span>}</td></tr>
+<tr><td class="ln">141</td><td class="code">        ],</td></tr>
+<tr><td class="ln">142</td><td class="code">        STUDENT: [</td></tr>
+<tr><td class="ln">143</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;home&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.home&#x27;</span>), icon: &lt;HomeIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/&quot;</span>},</td></tr>
+<tr><td class="ln">144</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;schedule&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedule&#x27;</span>), icon: &lt;ScheduleIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/schedule/:classId&quot;</span>},</td></tr>
+<tr><td class="ln">145</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;grades&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>), icon: &lt;Grade /&gt;, to: <span <span class="kw">class</span>="str">&quot;/grades/me&quot;</span>},</td></tr>
+<tr><td class="ln">146</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;absences&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/absences/me&quot;</span>},</td></tr>
+<tr><td class="ln">147</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;complaints&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.complaints&#x27;</span>), icon: &lt;ComplaintIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/complaints/:studentId&quot;</span>},</td></tr>
+<tr><td class="ln">148</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;profile&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>), icon: &lt;ProfileIcon /&gt;, to: <span <span class="kw">class</span>="str">&quot;/profile&quot;</span>},</td></tr>
+<tr><td class="ln">149</td><td class="code">            {key: <span <span class="kw">class</span>="str">&quot;logout&quot;</span>, label: t(<span <span class="kw">class</span>="str">&#x27;nav.logout&#x27;</span>), icon: &lt;Logout /&gt;, to: <span <span class="kw">class</span>="str">&quot;/login&quot;</span>}</td></tr>
+<tr><td class="ln">150</td><td class="code">        ]</td></tr>
+<tr><td class="ln">151</td><td class="code">    };</td></tr>
+<tr><td class="ln">152</td><td class="code"></td></tr>
+<tr><td class="ln">153</td><td class="code">    <span class="kw">const</span> drawerContent = (</td></tr>
+<tr><td class="ln">154</td><td class="code">    &lt;&gt;</td></tr>
+<tr><td class="ln">155</td><td class="code">        {/* Header row: logo + close button */}</td></tr>
+<tr><td class="ln">156</td><td class="code">        &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, alignItems: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span>, justifyContent: <span <span class="kw">class</span>="str">&#x27;space-between&#x27;</span>, pr: <span <span class="kw">class</span>="num">1</span> }}&gt;</td></tr>
+<tr><td class="ln">157</td><td class="code">            &lt;img src={logo} alt=<span <span class="kw">class</span>="str">&quot;logo&quot;</span> className=<span <span class="kw">class</span>="str">&quot;sidebar-logo&quot;</span> /&gt;</td></tr>
+<tr><td class="ln">158</td><td class="code">            &lt;IconButton</td></tr>
+<tr><td class="ln">159</td><td class="code">                onClick={() =&gt; setDesktopOpen(<span class="kw">false</span>)}</td></tr>
+<tr><td class="ln">160</td><td class="code">                sx={{ display: { xs: <span <span class="kw">class</span>="str">&#x27;none&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span> }, color: <span <span class="kw">class</span>="str">&#x27;inherit&#x27;</span> }}</td></tr>
+<tr><td class="ln">161</td><td class="code">            &gt;</td></tr>
+<tr><td class="ln">162</td><td class="code">                &lt;ChevronLeftIcon /&gt;</td></tr>
+<tr><td class="ln">163</td><td class="code">            &lt;/IconButton&gt;</td></tr>
+<tr><td class="ln">164</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">165</td><td class="code"></td></tr>
+<tr><td class="ln">166</td><td class="code">        &lt;List&gt;</td></tr>
+<tr><td class="ln">167</td><td class="code">            {menuItems[user.role].map((item) =&gt; (</td></tr>
+<tr><td class="ln">168</td><td class="code">                &lt;Box</td></tr>
+<tr><td class="ln">169</td><td class="code">                    key={item.key}</td></tr>
+<tr><td class="ln">170</td><td class="code">                    onMouseEnter={() =&gt; handleParentEnter(item.key)}</td></tr>
+<tr><td class="ln">171</td><td class="code">                    onMouseLeave={() =&gt; handleParentLeave()}</td></tr>
+<tr><td class="ln">172</td><td class="code">                &gt;</td></tr>
+<tr><td class="ln">173</td><td class="code">                    &lt;ListItem disablePadding&gt;</td></tr>
+<tr><td class="ln">174</td><td class="code">                        &lt;ListItemButton</td></tr>
+<tr><td class="ln">175</td><td class="code">                            component={item.to ? Link : <span <span class="kw">class</span>="str">&quot;div&quot;</span>}</td></tr>
+<tr><td class="ln">176</td><td class="code">                            to={item.submenu ? <span class="kw">undefined</span> : item.to}</td></tr>
+<tr><td class="ln">177</td><td class="code">                            onClick={() =&gt; {</td></tr>
+<tr><td class="ln">178</td><td class="code">                                <span class="kw">if</span> (item.submenu) {</td></tr>
+<tr><td class="ln">179</td><td class="code">                                    handleParentClick(item.key, <span class="kw">true</span>);</td></tr>
+<tr><td class="ln">180</td><td class="code">                                } <span class="kw">else</span> {</td></tr>
+<tr><td class="ln">181</td><td class="code">                                    <span class="kw">if</span> (isMobile) setMobileOpen(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">182</td><td class="code">                                }</td></tr>
+<tr><td class="ln">183</td><td class="code">                            }}</td></tr>
+<tr><td class="ln">184</td><td class="code">                        &gt;</td></tr>
+<tr><td class="ln">185</td><td class="code">                            &lt;ListItemIcon&gt;{item.icon}&lt;/ListItemIcon&gt;</td></tr>
+<tr><td class="ln">186</td><td class="code">                            &lt;ListItemText primary={item.label} /&gt;</td></tr>
+<tr><td class="ln">187</td><td class="code">                        &lt;/ListItemButton&gt;</td></tr>
+<tr><td class="ln">188</td><td class="code">                    &lt;/ListItem&gt;</td></tr>
+<tr><td class="ln">189</td><td class="code"></td></tr>
+<tr><td class="ln">190</td><td class="code">                    {/* SUBMENU */}</td></tr>
+<tr><td class="ln">191</td><td class="code">                    {item.submenu &amp;&amp; (</td></tr>
+<tr><td class="ln">192</td><td class="code">                        &lt;Collapse <span class="kw">in</span>={openMenu === item.key} timeout=<span <span class="kw">class</span>="str">&quot;auto&quot;</span> unmountOnExit&gt;</td></tr>
+<tr><td class="ln">193</td><td class="code">                            &lt;List component=<span <span class="kw">class</span>="str">&quot;div&quot;</span> disablePadding&gt;</td></tr>
+<tr><td class="ln">194</td><td class="code">                                {item.submenu.map((sub) =&gt; (</td></tr>
+<tr><td class="ln">195</td><td class="code">                                    &lt;ListItem key={sub.key || sub.label} disablePadding sx={{ pl: <span <span class="kw">class</span>="num">4</span> }}&gt;</td></tr>
+<tr><td class="ln">196</td><td class="code">                                        &lt;ListItemButton</td></tr>
+<tr><td class="ln">197</td><td class="code">                                            component={sub.to ? Link : <span <span class="kw">class</span>="str">&quot;button&quot;</span>}</td></tr>
+<tr><td class="ln">198</td><td class="code">                                            to={sub.to}</td></tr>
+<tr><td class="ln">199</td><td class="code">                                            onClick={() =&gt; {</td></tr>
+<tr><td class="ln">200</td><td class="code">                                                sub.onClick?.();</td></tr>
+<tr><td class="ln">201</td><td class="code">                                                <span class="kw">if</span> (isMobile) {</td></tr>
+<tr><td class="ln">202</td><td class="code">                                                    setMobileOpen(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">203</td><td class="code">                                                    setOpenMenu(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">204</td><td class="code">                                                }</td></tr>
+<tr><td class="ln">205</td><td class="code">                                            }}</td></tr>
+<tr><td class="ln">206</td><td class="code">                                        &gt;</td></tr>
+<tr><td class="ln">207</td><td class="code">                                            &lt;ListItemText primary={sub.label} /&gt;</td></tr>
+<tr><td class="ln">208</td><td class="code">                                        &lt;/ListItemButton&gt;</td></tr>
+<tr><td class="ln">209</td><td class="code">                                    &lt;/ListItem&gt;</td></tr>
+<tr><td class="ln">210</td><td class="code">                                ))}</td></tr>
+<tr><td class="ln">211</td><td class="code">                            &lt;/List&gt;</td></tr>
+<tr><td class="ln">212</td><td class="code">                        &lt;/Collapse&gt;</td></tr>
+<tr><td class="ln">213</td><td class="code">                    )}</td></tr>
+<tr><td class="ln">214</td><td class="code">                &lt;/Box&gt;</td></tr>
+<tr><td class="ln">215</td><td class="code">            ))}</td></tr>
+<tr><td class="ln">216</td><td class="code">        &lt;/List&gt;</td></tr>
+<tr><td class="ln">217</td><td class="code"></td></tr>
+<tr><td class="ln">218</td><td class="code">        &lt;Box sx={{ mt: <span <span class="kw">class</span>="str">&#x27;auto&#x27;</span>, mb: <span <span class="kw">class</span>="num">2</span>, display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, justifyContent: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span> }}&gt;</td></tr>
+<tr><td class="ln">219</td><td class="code">            &lt;ToggleButtonGroup</td></tr>
+<tr><td class="ln">220</td><td class="code">                value={i18n.language}</td></tr>
+<tr><td class="ln">221</td><td class="code">                exclusive</td></tr>
+<tr><td class="ln">222</td><td class="code">                size=<span <span class="kw">class</span>="str">&quot;small&quot;</span></td></tr>
+<tr><td class="ln">223</td><td class="code">                onChange={(_, lng) =&gt; { <span class="kw">if</span> (lng) i18n.changeLanguage(lng); }}</td></tr>
+<tr><td class="ln">224</td><td class="code">            &gt;</td></tr>
+<tr><td class="ln">225</td><td class="code">                &lt;ToggleButton value=<span <span class="kw">class</span>="str">&quot;en&quot;</span>&gt;EN&lt;/ToggleButton&gt;</td></tr>
+<tr><td class="ln">226</td><td class="code">                &lt;ToggleButton value=<span <span class="kw">class</span>="str">&quot;bg&quot;</span>&gt;BG&lt;/ToggleButton&gt;</td></tr>
+<tr><td class="ln">227</td><td class="code">            &lt;/ToggleButtonGroup&gt;</td></tr>
+<tr><td class="ln">228</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">229</td><td class="code">    &lt;/&gt;</td></tr>
+<tr><td class="ln">230</td><td class="code">    );</td></tr>
+<tr><td class="ln">231</td><td class="code"></td></tr>
+<tr><td class="ln">232</td><td class="code">    <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">233</td><td class="code">    &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span> }}&gt;</td></tr>
+<tr><td class="ln">234</td><td class="code">        {/* Mobile AppBar */}</td></tr>
+<tr><td class="ln">235</td><td class="code">        &lt;AppBar</td></tr>
+<tr><td class="ln">236</td><td class="code">            position=<span <span class="kw">class</span>="str">&quot;fixed&quot;</span></td></tr>
+<tr><td class="ln">237</td><td class="code">            sx={{</td></tr>
+<tr><td class="ln">238</td><td class="code">                display: { xs: <span <span class="kw">class</span>="str">&#x27;block&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;none&#x27;</span> },</td></tr>
+<tr><td class="ln">239</td><td class="code">                width: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">100</span>%&#x27;</span>,</td></tr>
+<tr><td class="ln">240</td><td class="code">            }}</td></tr>
+<tr><td class="ln">241</td><td class="code">        &gt;</td></tr>
+<tr><td class="ln">242</td><td class="code">            &lt;Toolbar&gt;</td></tr>
+<tr><td class="ln">243</td><td class="code">                &lt;IconButton</td></tr>
+<tr><td class="ln">244</td><td class="code">                    color=<span <span class="kw">class</span>="str">&quot;inherit&quot;</span></td></tr>
+<tr><td class="ln">245</td><td class="code">                    aria-label=<span <span class="kw">class</span>="str">&quot;open drawer&quot;</span></td></tr>
+<tr><td class="ln">246</td><td class="code">                    edge=<span <span class="kw">class</span>="str">&quot;start&quot;</span></td></tr>
+<tr><td class="ln">247</td><td class="code">                    onClick={handleDrawerToggle}</td></tr>
+<tr><td class="ln">248</td><td class="code">                    sx={{ mr: <span <span class="kw">class</span>="num">2</span> }}</td></tr>
+<tr><td class="ln">249</td><td class="code">                &gt;</td></tr>
+<tr><td class="ln">250</td><td class="code">                    &lt;MenuIcon /&gt;</td></tr>
+<tr><td class="ln">251</td><td class="code">                &lt;/IconButton&gt;</td></tr>
+<tr><td class="ln">252</td><td class="code">            &lt;/Toolbar&gt;</td></tr>
+<tr><td class="ln">253</td><td class="code">        &lt;/AppBar&gt;</td></tr>
+<tr><td class="ln">254</td><td class="code"></td></tr>
+<tr><td class="ln">255</td><td class="code">        {/* Desktop reopen button — only visible when sidebar is closed */}</td></tr>
+<tr><td class="ln">256</td><td class="code">        {!desktopOpen &amp;&amp; (</td></tr>
+<tr><td class="ln">257</td><td class="code">            &lt;IconButton</td></tr>
+<tr><td class="ln">258</td><td class="code">                onClick={() =&gt; setDesktopOpen(<span class="kw">true</span>)}</td></tr>
+<tr><td class="ln">259</td><td class="code">                sx={{</td></tr>
+<tr><td class="ln">260</td><td class="code">                    display: { xs: <span <span class="kw">class</span>="str">&#x27;none&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span> },</td></tr>
+<tr><td class="ln">261</td><td class="code">                    position: <span <span class="kw">class</span>="str">&#x27;fixed&#x27;</span>,</td></tr>
+<tr><td class="ln">262</td><td class="code">                    top: <span <span class="kw">class</span>="num">12</span>,</td></tr>
+<tr><td class="ln">263</td><td class="code">                    left: <span <span class="kw">class</span>="num">12</span>,</td></tr>
+<tr><td class="ln">264</td><td class="code">                    zIndex: (t) =&gt; t.zIndex.drawer + <span <span class="kw">class</span>="num">1</span>,</td></tr>
+<tr><td class="ln">265</td><td class="code">                    bgcolor: <span <span class="kw">class</span>="str">&#x27;primary.main&#x27;</span>,</td></tr>
+<tr><td class="ln">266</td><td class="code">                    color: <span <span class="kw">class</span>="str">&#x27;secondary.contrastText&#x27;</span>,</td></tr>
+<tr><td class="ln">267</td><td class="code">                    &#x27;&amp;:hover<span <span class="kw">class</span>="str">&#x27;: { bgcolor: &#x27;</span>primary.dark&#x27; },</td></tr>
+<tr><td class="ln">268</td><td class="code">                }}</td></tr>
+<tr><td class="ln">269</td><td class="code">            &gt;</td></tr>
+<tr><td class="ln">270</td><td class="code">                &lt;MenuIcon /&gt;</td></tr>
+<tr><td class="ln">271</td><td class="code">            &lt;/IconButton&gt;</td></tr>
+<tr><td class="ln">272</td><td class="code">        )}</td></tr>
+<tr><td class="ln">273</td><td class="code"></td></tr>
+<tr><td class="ln">274</td><td class="code">        &lt;Box component=<span <span class="kw">class</span>="str">&quot;nav&quot;</span> sx={{ flexShrink: { md: <span <span class="kw">class</span>="num">0</span> } }}&gt;</td></tr>
+<tr><td class="ln">275</td><td class="code">            {/* Mobile drawer (temporary) */}</td></tr>
+<tr><td class="ln">276</td><td class="code">            &lt;Drawer</td></tr>
+<tr><td class="ln">277</td><td class="code">                variant=<span <span class="kw">class</span>="str">&quot;temporary&quot;</span></td></tr>
+<tr><td class="ln">278</td><td class="code">                open={mobileOpen}</td></tr>
+<tr><td class="ln">279</td><td class="code">                onClose={handleDrawerToggle}</td></tr>
+<tr><td class="ln">280</td><td class="code">                ModalProps={{ keepMounted: <span class="kw">true</span> }}</td></tr>
+<tr><td class="ln">281</td><td class="code">                sx={{</td></tr>
+<tr><td class="ln">282</td><td class="code">                    display: { xs: <span <span class="kw">class</span>="str">&#x27;block&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;none&#x27;</span> },</td></tr>
+<tr><td class="ln">283</td><td class="code">                    &#x27;&amp; .MuiDrawer-paper&#x27;: {</td></tr>
+<tr><td class="ln">284</td><td class="code">                        boxSizing: <span <span class="kw">class</span>="str">&#x27;border-box&#x27;</span>,</td></tr>
+<tr><td class="ln">285</td><td class="code">                        width: drawerWidth,</td></tr>
+<tr><td class="ln">286</td><td class="code">                        backgroundColor: theme.palette.primary.main,</td></tr>
+<tr><td class="ln">287</td><td class="code">                        color: theme.palette.primary.contrastText,</td></tr>
+<tr><td class="ln">288</td><td class="code">                    },</td></tr>
+<tr><td class="ln">289</td><td class="code">                }}</td></tr>
+<tr><td class="ln">290</td><td class="code">            &gt;</td></tr>
+<tr><td class="ln">291</td><td class="code">                {drawerContent}</td></tr>
+<tr><td class="ln">292</td><td class="code">            &lt;/Drawer&gt;</td></tr>
+<tr><td class="ln">293</td><td class="code"></td></tr>
+<tr><td class="ln">294</td><td class="code">            {/* Desktop drawer (permanent, collapsible via width animation) */}</td></tr>
+<tr><td class="ln">295</td><td class="code">            &lt;Drawer</td></tr>
+<tr><td class="ln">296</td><td class="code">                variant=<span <span class="kw">class</span>="str">&quot;permanent&quot;</span></td></tr>
+<tr><td class="ln">297</td><td class="code">                sx={{</td></tr>
+<tr><td class="ln">298</td><td class="code">                    display: { xs: <span <span class="kw">class</span>="str">&#x27;none&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;block&#x27;</span> },</td></tr>
+<tr><td class="ln">299</td><td class="code">                    &#x27;&amp; .MuiDrawer-paper&#x27;: {</td></tr>
+<tr><td class="ln">300</td><td class="code">                        boxSizing: <span <span class="kw">class</span>="str">&#x27;border-box&#x27;</span>,</td></tr>
+<tr><td class="ln">301</td><td class="code">                        width: desktopOpen ? drawerWidth : <span <span class="kw">class</span>="num">0</span>,</td></tr>
+<tr><td class="ln">302</td><td class="code">                        transition: theme.transitions.create(<span <span class="kw">class</span>="str">&#x27;width&#x27;</span>, {</td></tr>
+<tr><td class="ln">303</td><td class="code">                            easing: theme.transitions.easing.sharp,</td></tr>
+<tr><td class="ln">304</td><td class="code">                            duration: desktopOpen</td></tr>
+<tr><td class="ln">305</td><td class="code">                                ? theme.transitions.duration.enteringScreen</td></tr>
+<tr><td class="ln">306</td><td class="code">                                : theme.transitions.duration.leavingScreen,</td></tr>
+<tr><td class="ln">307</td><td class="code">                        }),</td></tr>
+<tr><td class="ln">308</td><td class="code">                        overflow: <span <span class="kw">class</span>="str">&#x27;hidden&#x27;</span>,</td></tr>
+<tr><td class="ln">309</td><td class="code">                        backgroundColor: theme.palette.primary.main,</td></tr>
+<tr><td class="ln">310</td><td class="code">                        color: theme.palette.primary.contrastText,</td></tr>
+<tr><td class="ln">311</td><td class="code">                        display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>,</td></tr>
+<tr><td class="ln">312</td><td class="code">                        flexDirection: <span <span class="kw">class</span>="str">&#x27;column&#x27;</span>,</td></tr>
+<tr><td class="ln">313</td><td class="code">                    },</td></tr>
+<tr><td class="ln">314</td><td class="code">                }}</td></tr>
+<tr><td class="ln">315</td><td class="code">                open</td></tr>
+<tr><td class="ln">316</td><td class="code">            &gt;</td></tr>
+<tr><td class="ln">317</td><td class="code">                {drawerContent}</td></tr>
+<tr><td class="ln">318</td><td class="code">            &lt;/Drawer&gt;</td></tr>
+<tr><td class="ln">319</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">320</td><td class="code">    &lt;/Box&gt;</td></tr>
+<tr><td class="ln">321</td><td class="code">    );</td></tr>
+<tr><td class="ln">322</td><td class="code">};</td></tr>
+<tr><td class="ln">323</td><td class="code"></td></tr>
+<tr><td class="ln">324</td><td class="code"><span class="kw">export</span> <span class="kw">default</span> Sidebar;</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

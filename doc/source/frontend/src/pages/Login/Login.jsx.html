@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Login.jsx</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>The Login component provides the user interface for authenticating into the EduTrack school e-journal system. It renders a centered form with email and password fields, utilizing Material UI components for consistent styling and layout. The component manages local state for input values and error messages while handling form submission through the handleLogin function. It integrates with the useAuth hook to process credentials and navigate users to the home page upon successful authentication. Additionally, it supports internationalization via react-i18next to display labels and messages in multiple languages. This file serves as the entry point for user access control within the application.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">import</span> {Grid, Paper, TextField, Box, Button, Typography} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/material&#x27;</span></td></tr>
+<tr><td class="ln">2</td><td class="code"><span class="kw">import</span> React <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> logo <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../../public/EduTrack_logo_positive.svg&#x27;</span></td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> useAuth <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../hooks/useAuth&#x27;</span></td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> { useNavigate } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-router-dom&#x27;</span></td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> { useState } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span></td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> { useTranslation } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-i18next&#x27;</span></td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> <span <span class="kw">class</span>="str">&#x27;../../styles/login.css&#x27;</span></td></tr>
+<tr><td class="ln">9</td><td class="code"></td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">function</span> Login() {</td></tr>
+<tr><td class="ln">11</td><td class="code">  <span <span class="kw">class</span>="cmt">//mockAdminLogin is TEMPORARY</span></td></tr>
+<tr><td class="ln">12</td><td class="code">  <span class="kw">const</span> { login, mockAdminLogin } = useAuth();</td></tr>
+<tr><td class="ln">13</td><td class="code">  <span class="kw">const</span> { t } = useTranslation();</td></tr>
+<tr><td class="ln">14</td><td class="code">  <span class="kw">const</span> navigate = useNavigate();</td></tr>
+<tr><td class="ln">15</td><td class="code"></td></tr>
+<tr><td class="ln">16</td><td class="code">  <span class="kw">const</span> [email, setEmail] = useState(<span <span class="kw">class</span>="str">&quot;&quot;</span>);</td></tr>
+<tr><td class="ln">17</td><td class="code">  <span class="kw">const</span> [password, setPassword] = useState(<span <span class="kw">class</span>="str">&quot;&quot;</span>);</td></tr>
+<tr><td class="ln">18</td><td class="code">  <span class="kw">const</span> [error, setError] = useState(<span <span class="kw">class</span>="str">&quot;&quot;</span>);</td></tr>
+<tr><td class="ln">19</td><td class="code"></td></tr>
+<tr><td class="ln">20</td><td class="code">  <span class="kw">const</span> handleLogin = <span class="kw">async</span> (e) =&gt; {</td></tr>
+<tr><td class="ln">21</td><td class="code">    e.preventDefault();</td></tr>
+<tr><td class="ln">22</td><td class="code">    setError(<span <span class="kw">class</span>="str">&quot;&quot;</span>);</td></tr>
+<tr><td class="ln">23</td><td class="code"></td></tr>
+<tr><td class="ln">24</td><td class="code">    <span class="kw">const</span> result = <span class="kw">await</span> login(email, password);</td></tr>
+<tr><td class="ln">25</td><td class="code"></td></tr>
+<tr><td class="ln">26</td><td class="code">    <span class="kw">if</span> (result.success) {</td></tr>
+<tr><td class="ln">27</td><td class="code">      navigate(<span <span class="kw">class</span>="str">&quot;/&quot;</span>);</td></tr>
+<tr><td class="ln">28</td><td class="code">    } <span class="kw">else</span> {</td></tr>
+<tr><td class="ln">29</td><td class="code">      setError(result.error);</td></tr>
+<tr><td class="ln">30</td><td class="code">    }</td></tr>
+<tr><td class="ln">31</td><td class="code">  };</td></tr>
+<tr><td class="ln">32</td><td class="code"></td></tr>
+<tr><td class="ln">33</td><td class="code">  <span class="kw">const</span> paperStyle = {</td></tr>
+<tr><td class="ln">34</td><td class="code">    bgcolor: <span <span class="kw">class</span>="str">&#x27;primary.main&#x27;</span>, </td></tr>
+<tr><td class="ln">35</td><td class="code">    padding: { xs: <span <span class="kw">class</span>="num">3</span>, sm: <span <span class="kw">class</span>="num">4</span> },</td></tr>
+<tr><td class="ln">36</td><td class="code">    height: <span <span class="kw">class</span>="str">&#x27;auto&#x27;</span>,</td></tr>
+<tr><td class="ln">37</td><td class="code">    minHeight: <span <span class="kw">class</span>="str">&#x27;60vh&#x27;</span>,</td></tr>
+<tr><td class="ln">38</td><td class="code">    width: { xs: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">90</span>%&#x27;</span>, sm: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">60</span>%&#x27;</span>, md: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">30</span>%&#x27;</span>, lg: <span <span class="kw">class</span>="num">350</span> },</td></tr>
+<tr><td class="ln">39</td><td class="code">    maxWidth: <span <span class="kw">class</span>="num">400</span>,</td></tr>
+<tr><td class="ln">40</td><td class="code">    margin: <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">0</span> auto&quot;</span>, </td></tr>
+<tr><td class="ln">41</td><td class="code">    display: <span <span class="kw">class</span>="str">&quot;flex&quot;</span>, </td></tr>
+<tr><td class="ln">42</td><td class="code">    flexDirection: <span <span class="kw">class</span>="str">&quot;column&quot;</span>, </td></tr>
+<tr><td class="ln">43</td><td class="code">    alignItems: <span <span class="kw">class</span>="str">&quot;center&quot;</span></td></tr>
+<tr><td class="ln">44</td><td class="code">  }</td></tr>
+<tr><td class="ln">45</td><td class="code"></td></tr>
+<tr><td class="ln">46</td><td class="code">  <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">47</td><td class="code">    &lt;Grid</td></tr>
+<tr><td class="ln">48</td><td class="code">      container</td></tr>
+<tr><td class="ln">49</td><td class="code">      justifyContent=<span <span class="kw">class</span>="str">&quot;center&quot;</span></td></tr>
+<tr><td class="ln">50</td><td class="code">      alignItems=<span <span class="kw">class</span>="str">&quot;center&quot;</span></td></tr>
+<tr><td class="ln">51</td><td class="code">      sx={{</td></tr>
+<tr><td class="ln">52</td><td class="code">        bgcolor: <span <span class="kw">class</span>="str">&#x27;secondary.main&#x27;</span>, </td></tr>
+<tr><td class="ln">53</td><td class="code">        width: <span <span class="kw">class</span>="str">&#x27;100vw&#x27;</span>, </td></tr>
+<tr><td class="ln">54</td><td class="code">        minHeight: <span <span class="kw">class</span>="str">&#x27;100vh&#x27;</span>,</td></tr>
+<tr><td class="ln">55</td><td class="code">        padding: { xs: <span <span class="kw">class</span>="num">2</span>, sm: <span <span class="kw">class</span>="num">4</span>, md: <span <span class="kw">class</span>="num">6</span> }</td></tr>
+<tr><td class="ln">56</td><td class="code">      }}</td></tr>
+<tr><td class="ln">57</td><td class="code">      &gt;</td></tr>
+<tr><td class="ln">58</td><td class="code">      &lt;Paper elevation={<span <span class="kw">class</span>="num">5</span>} sx={paperStyle}&gt;</td></tr>
+<tr><td class="ln">59</td><td class="code">        &lt;img src={logo} alt=<span <span class="kw">class</span>="str">&quot;logo&quot;</span> className=<span <span class="kw">class</span>="str">&quot;login-logo&quot;</span> /&gt;</td></tr>
+<tr><td class="ln">60</td><td class="code">        </td></tr>
+<tr><td class="ln">61</td><td class="code">        &lt;Box</td></tr>
+<tr><td class="ln">62</td><td class="code">          component=<span <span class="kw">class</span>="str">&quot;form&quot;</span></td></tr>
+<tr><td class="ln">63</td><td class="code">          autoComplete=<span <span class="kw">class</span>="str">&#x27;off&#x27;</span></td></tr>
+<tr><td class="ln">64</td><td class="code">          sx={{</td></tr>
+<tr><td class="ln">65</td><td class="code">            display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, </td></tr>
+<tr><td class="ln">66</td><td class="code">            flexDirection: <span <span class="kw">class</span>="str">&#x27;column&#x27;</span>, </td></tr>
+<tr><td class="ln">67</td><td class="code">            alignItems: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span>, </td></tr>
+<tr><td class="ln">68</td><td class="code">            justifyContent: <span <span class="kw">class</span>="str">&#x27;space-between&#x27;</span>, </td></tr>
+<tr><td class="ln">69</td><td class="code">            width: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">100</span>%&#x27;</span>,</td></tr>
+<tr><td class="ln">70</td><td class="code">            gap: { xs: <span <span class="kw">class</span>="num">3</span>, sm: <span <span class="kw">class</span>="num">4</span> },</td></tr>
+<tr><td class="ln">71</td><td class="code">            paddingTop: <span <span class="kw">class</span>="num">1</span></td></tr>
+<tr><td class="ln">72</td><td class="code">          }}</td></tr>
+<tr><td class="ln">73</td><td class="code">          onSubmit={handleLogin}</td></tr>
+<tr><td class="ln">74</td><td class="code">        &gt;</td></tr>
+<tr><td class="ln">75</td><td class="code">          &lt;TextField</td></tr>
+<tr><td class="ln">76</td><td class="code">            required</td></tr>
+<tr><td class="ln">77</td><td class="code">            id=<span <span class="kw">class</span>="str">&quot;standard-required&quot;</span></td></tr>
+<tr><td class="ln">78</td><td class="code">            label={t(<span <span class="kw">class</span>="str">&#x27;login.emailAddress&#x27;</span>)}</td></tr>
+<tr><td class="ln">79</td><td class="code">            variant=<span <span class="kw">class</span>="str">&quot;standard&quot;</span></td></tr>
+<tr><td class="ln">80</td><td class="code">            type=<span <span class="kw">class</span>="str">&quot;email&quot;</span></td></tr>
+<tr><td class="ln">81</td><td class="code">            fullWidth</td></tr>
+<tr><td class="ln">82</td><td class="code">            InputLabelProps={{ shrink: <span class="kw">true</span> }}</td></tr>
+<tr><td class="ln">83</td><td class="code">            sx={{</td></tr>
+<tr><td class="ln">84</td><td class="code">              &#x27;&amp; .MuiInput-root&#x27;: {</td></tr>
+<tr><td class="ln">85</td><td class="code">                  color: <span <span class="kw">class</span>="str">&#x27;secondary.main&#x27;</span>,</td></tr>
+<tr><td class="ln">86</td><td class="code">              }</td></tr>
+<tr><td class="ln">87</td><td class="code">            }}</td></tr>
+<tr><td class="ln">88</td><td class="code">            onChange={(e) =&gt; setEmail(e.target.value)}</td></tr>
+<tr><td class="ln">89</td><td class="code">          /&gt;</td></tr>
+<tr><td class="ln">90</td><td class="code"></td></tr>
+<tr><td class="ln">91</td><td class="code">          &lt;TextField</td></tr>
+<tr><td class="ln">92</td><td class="code">          required</td></tr>
+<tr><td class="ln">93</td><td class="code">          id=<span <span class="kw">class</span>="str">&quot;standard-password-input&quot;</span></td></tr>
+<tr><td class="ln">94</td><td class="code">          label={t(<span <span class="kw">class</span>="str">&#x27;login.password&#x27;</span>)}</td></tr>
+<tr><td class="ln">95</td><td class="code">          type=<span <span class="kw">class</span>="str">&quot;password&quot;</span></td></tr>
+<tr><td class="ln">96</td><td class="code">          autoComplete=<span <span class="kw">class</span>="str">&quot;current-password&quot;</span></td></tr>
+<tr><td class="ln">97</td><td class="code">          variant=<span <span class="kw">class</span>="str">&quot;standard&quot;</span></td></tr>
+<tr><td class="ln">98</td><td class="code">          fullWidth</td></tr>
+<tr><td class="ln">99</td><td class="code">          InputLabelProps={{ shrink: <span class="kw">true</span> }}</td></tr>
+<tr><td class="ln">100</td><td class="code">          sx={{</td></tr>
+<tr><td class="ln">101</td><td class="code">            &#x27;&amp; .MuiInput-root&#x27;: {</td></tr>
+<tr><td class="ln">102</td><td class="code">                color: <span <span class="kw">class</span>="str">&#x27;secondary.main&#x27;</span>,</td></tr>
+<tr><td class="ln">103</td><td class="code">            }</td></tr>
+<tr><td class="ln">104</td><td class="code">          }}</td></tr>
+<tr><td class="ln">105</td><td class="code">          onChange={(e) =&gt; setPassword(e.target.value)}</td></tr>
+<tr><td class="ln">106</td><td class="code">          /&gt;</td></tr>
+<tr><td class="ln">107</td><td class="code"></td></tr>
+<tr><td class="ln">108</td><td class="code">          {error &amp;&amp; (</td></tr>
+<tr><td class="ln">109</td><td class="code">            &lt;Typography color=<span <span class="kw">class</span>="str">&quot;error&quot;</span> sx={{ mb: <span <span class="kw">class</span>="num">2</span> }}&gt;</td></tr>
+<tr><td class="ln">110</td><td class="code">              {error}</td></tr>
+<tr><td class="ln">111</td><td class="code">            &lt;/Typography&gt;</td></tr>
+<tr><td class="ln">112</td><td class="code">          )}</td></tr>
+<tr><td class="ln">113</td><td class="code"></td></tr>
+<tr><td class="ln">114</td><td class="code">          &lt;Button </td></tr>
+<tr><td class="ln">115</td><td class="code">            type=<span <span class="kw">class</span>="str">&#x27;submit&#x27;</span></td></tr>
+<tr><td class="ln">116</td><td class="code">            color=<span <span class="kw">class</span>="str">&#x27;secondary&#x27;</span> </td></tr>
+<tr><td class="ln">117</td><td class="code">            fullWidth </td></tr>
+<tr><td class="ln">118</td><td class="code">            variant=<span <span class="kw">class</span>="str">&#x27;contained&#x27;</span> sx={{ mt: <span <span class="kw">class</span>="num">2</span> }}</td></tr>
+<tr><td class="ln">119</td><td class="code">          &gt;</td></tr>
+<tr><td class="ln">120</td><td class="code">            {t(<span <span class="kw">class</span>="str">&#x27;login.signIn&#x27;</span>)}</td></tr>
+<tr><td class="ln">121</td><td class="code">          &lt;/Button&gt;</td></tr>
+<tr><td class="ln">122</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">123</td><td class="code">      &lt;/Paper&gt;</td></tr>
+<tr><td class="ln">124</td><td class="code">    &lt;/Grid&gt;</td></tr>
+<tr><td class="ln">125</td><td class="code">  )</td></tr>
+<tr><td class="ln">126</td><td class="code">}</td></tr>
+<tr><td class="ln">127</td><td class="code"></td></tr>
+<tr><td class="ln">128</td><td class="code"><span class="kw">export</span> <span class="kw">default</span> Login</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

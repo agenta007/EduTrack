@@ -1,0 +1,5 @@
+./mvnw clean compile
+./mvnw spring-boot:run
+./mvnw clean
+  DROP TABLE IF EXISTS school_schedule_entries, absences, grades, schedules, teacher_qualifications, subjects,          
+  parent_student, students, teachers, classes, schools, users, roles CASCADE;

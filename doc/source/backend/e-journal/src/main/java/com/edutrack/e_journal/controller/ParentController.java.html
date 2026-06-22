@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ParentController.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This controller manages administrative operations for parent accounts within the EduTrack system. It exposes REST endpoints that allow headmasters and administrators to list parents, link or unlink them to students, and update parent details. All endpoints require authentication and enforce role-based access control to ensure only authorized personnel can modify school data. The controller delegates business logic to the ParentService layer while handling HTTP request mapping and response formatting. It serves as the primary interface for managing the relationship between parent users and student records in the e-journal application.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.controller;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.ParentDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.UserDto;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.service.ParentService;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.Operation;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.Parameter;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponse;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponses;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.security.SecurityRequirement;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.tags.Tag;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> lombok.Getter;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> lombok.NoArgsConstructor;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> org.springframework.http.ResponseEntity;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> org.springframework.security.access.prepost.PreAuthorize;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> org.springframework.security.core.annotation.AuthenticationPrincipal;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> org.springframework.web.bind.annotation.*;</td></tr>
+<tr><td class="ln">20</td><td class="code"></td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">22</td><td class="code"></td></tr>
+<tr><td class="ln">23</td><td class="code"><span <span class="kw">class</span>="ann">@RestController</span></td></tr>
+<tr><td class="ln">24</td><td class="code"><span <span class="kw">class</span>="ann">@RequestMapping</span>(<span <span class="kw">class</span>="str">&quot;/api/parents&quot;</span>)</td></tr>
+<tr><td class="ln">25</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">26</td><td class="code"><span <span class="kw">class</span>="ann">@Tag</span>(name = <span <span class="kw">class</span>="str">&quot;Parents&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Headmaster operations — link/unlink parents to students and edit parent data&quot;</span>)</td></tr>
+<tr><td class="ln">27</td><td class="code"><span <span class="kw">class</span>="ann">@SecurityRequirement</span>(name = <span <span class="kw">class</span>="str">&quot;bearerAuth&quot;</span>)</td></tr>
+<tr><td class="ln">28</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> ParentController {</td></tr>
+<tr><td class="ln">29</td><td class="code"></td></tr>
+<tr><td class="ln">30</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> ParentService parentService;</td></tr>
+<tr><td class="ln">31</td><td class="code"></td></tr>
+<tr><td class="ln">32</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;List parents at a school&quot;</span>,</td></tr>
+<tr><td class="ln">33</td><td class="code">               description = <span <span class="kw">class</span>="str">&quot;Returns parents with their children (filtered to the given school). HEADMASTER (own school) or ADMIN.&quot;</span>)</td></tr>
+<tr><td class="ln">34</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent list returned&quot;</span>)</td></tr>
+<tr><td class="ln">35</td><td class="code">    <span <span class="kw">class</span>="ann">@GetMapping</span>(<span <span class="kw">class</span>="str">&quot;/school/{schoolId}&quot;</span>)</td></tr>
+<tr><td class="ln">36</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasAnyRole(&#x27;ADMIN&#x27;,&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">37</td><td class="code">    <span class="kw">public</span> List&lt;ParentDto&gt; getBySchool(</td></tr>
+<tr><td class="ln">38</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;School ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long schoolId,</td></tr>
+<tr><td class="ln">39</td><td class="code">            <span <span class="kw">class</span>="ann">@AuthenticationPrincipal</span> UserDetails principal) {</td></tr>
+<tr><td class="ln">40</td><td class="code">        <span <span class="kw">class</span>="cmt">// Delegate to service to fetch parents and validate the headmaster&#x27;s authority over the school</span></td></tr>
+<tr><td class="ln">41</td><td class="code">        <span class="kw">return</span> parentService.getBySchool(schoolId, principal);</td></tr>
+<tr><td class="ln">42</td><td class="code">    }</td></tr>
+<tr><td class="ln">43</td><td class="code"></td></tr>
+<tr><td class="ln">44</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;List all parent-role users&quot;</span>,</td></tr>
+<tr><td class="ln">45</td><td class="code">               description = <span <span class="kw">class</span>="str">&quot;Returns every user with the PARENT role <span class="kw">for</span> the link-parent dialog. HEADMASTER only.&quot;</span>)</td></tr>
+<tr><td class="ln">46</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent user list returned&quot;</span>)</td></tr>
+<tr><td class="ln">47</td><td class="code">    <span <span class="kw">class</span>="ann">@GetMapping</span>(<span <span class="kw">class</span>="str">&quot;/available&quot;</span>)</td></tr>
+<tr><td class="ln">48</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasRole(&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">49</td><td class="code">    <span class="kw">public</span> List&lt;UserDto&gt; getAvailable() {</td></tr>
+<tr><td class="ln">50</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all users with the PARENT role <span class="kw">for</span> the school&#x27;s headmaster</span></td></tr>
+<tr><td class="ln">51</td><td class="code">        <span class="kw">return</span> parentService.getAvailable();</td></tr>
+<tr><td class="ln">52</td><td class="code">    }</td></tr>
+<tr><td class="ln">53</td><td class="code"></td></tr>
+<tr><td class="ln">54</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Link a parent to a student&quot;</span>,</td></tr>
+<tr><td class="ln">55</td><td class="code">               description = <span <span class="kw">class</span>="str">&quot;Sets the student&#x27;s parent to the given user. The student must belong to the headmaster&#x27;s school. HEADMASTER only.&quot;</span>)</td></tr>
+<tr><td class="ln">56</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">57</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Linked — updated ParentDto returned&quot;</span>),</td></tr>
+<tr><td class="ln">58</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">400</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;User is not a parent&quot;</span>),</td></tr>
+<tr><td class="ln">59</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">403</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Student does not belong to headmaster&#x27;s school&quot;</span>),</td></tr>
+<tr><td class="ln">60</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">404</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent or student not found&quot;</span>)</td></tr>
+<tr><td class="ln">61</td><td class="code">    })</td></tr>
+<tr><td class="ln">62</td><td class="code">    <span <span class="kw">class</span>="ann">@PostMapping</span>(<span <span class="kw">class</span>="str">&quot;/{parentId}/link/{studentId}&quot;</span>)</td></tr>
+<tr><td class="ln">63</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasRole(&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">64</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;ParentDto&gt; link(</td></tr>
+<tr><td class="ln">65</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Parent user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long parentId,</td></tr>
+<tr><td class="ln">66</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Student user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long studentId,</td></tr>
+<tr><td class="ln">67</td><td class="code">            <span <span class="kw">class</span>="ann">@AuthenticationPrincipal</span> UserDetails principal) {</td></tr>
+<tr><td class="ln">68</td><td class="code">        <span <span class="kw">class</span>="cmt">// Delegate the linking logic to the service layer and <span class="kw">return</span> the updated parent DTO</span></td></tr>
+<tr><td class="ln">69</td><td class="code">        <span class="kw">return</span> ResponseEntity.ok(parentService.link(parentId, studentId, principal));</td></tr>
+<tr><td class="ln">70</td><td class="code">    }</td></tr>
+<tr><td class="ln">71</td><td class="code"></td></tr>
+<tr><td class="ln">72</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Unlink a parent from a student&quot;</span>,</td></tr>
+<tr><td class="ln">73</td><td class="code">               description = <span <span class="kw">class</span>="str">&quot;Clears the student&#x27;s parent field. The student must belong to the headmaster&#x27;s school. HEADMASTER only.&quot;</span>)</td></tr>
+<tr><td class="ln">74</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">75</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">204</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Unlinked successfully&quot;</span>),</td></tr>
+<tr><td class="ln">76</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">403</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Student does not belong to headmaster&#x27;s school&quot;</span>),</td></tr>
+<tr><td class="ln">77</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">404</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent or student not found&quot;</span>)</td></tr>
+<tr><td class="ln">78</td><td class="code">    })</td></tr>
+<tr><td class="ln">79</td><td class="code">    <span <span class="kw">class</span>="ann">@DeleteMapping</span>(<span <span class="kw">class</span>="str">&quot;/{parentId}/unlink/{studentId}&quot;</span>)</td></tr>
+<tr><td class="ln">80</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasRole(&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">81</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;Void&gt; unlink(</td></tr>
+<tr><td class="ln">82</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Parent user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long parentId,</td></tr>
+<tr><td class="ln">83</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Student user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long studentId,</td></tr>
+<tr><td class="ln">84</td><td class="code">            <span <span class="kw">class</span>="ann">@AuthenticationPrincipal</span> UserDetails principal) {</td></tr>
+<tr><td class="ln">85</td><td class="code">        <span <span class="kw">class</span>="cmt">// Delegate the unlinking logic to the service layer, passing the authenticated principal <span class="kw">for</span> authority checks</span></td></tr>
+<tr><td class="ln">86</td><td class="code">        parentService.unlink(parentId, studentId, principal);</td></tr>
+<tr><td class="ln">87</td><td class="code">        <span <span class="kw">class</span>="cmt">// Return <span <span class="kw">class</span>="num">204</span> No Content to indicate a successful deletion/update with no response body</span></td></tr>
+<tr><td class="ln">88</td><td class="code">        <span class="kw">return</span> ResponseEntity.noContent().build();</td></tr>
+<tr><td class="ln">89</td><td class="code">    }</td></tr>
+<tr><td class="ln">90</td><td class="code"></td></tr>
+<tr><td class="ln">91</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Update parent data&quot;</span>,</td></tr>
+<tr><td class="ln">92</td><td class="code">               description = <span <span class="kw">class</span>="str">&quot;Updates a parent&#x27;s first name, last name, and email. HEADMASTER only.&quot;</span>)</td></tr>
+<tr><td class="ln">93</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">94</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent updated — updated ParentDto returned&quot;</span>),</td></tr>
+<tr><td class="ln">95</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">404</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Parent not found&quot;</span>)</td></tr>
+<tr><td class="ln">96</td><td class="code">    })</td></tr>
+<tr><td class="ln">97</td><td class="code">    <span <span class="kw">class</span>="ann">@PutMapping</span>(<span <span class="kw">class</span>="str">&quot;/{parentId}&quot;</span>)</td></tr>
+<tr><td class="ln">98</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasRole(&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">99</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;ParentDto&gt; update(</td></tr>
+<tr><td class="ln">100</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Parent user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long parentId,</td></tr>
+<tr><td class="ln">101</td><td class="code">            <span <span class="kw">class</span>="ann">@RequestBody</span> UpdateParentRequest req,</td></tr>
+<tr><td class="ln">102</td><td class="code">            <span <span class="kw">class</span>="ann">@AuthenticationPrincipal</span> UserDetails principal) {</td></tr>
+<tr><td class="ln">103</td><td class="code">        <span <span class="kw">class</span>="cmt">// Delegate the update logic to the service layer using the provided DTO and security principal</span></td></tr>
+<tr><td class="ln">104</td><td class="code">        <span class="kw">return</span> ResponseEntity.ok(parentService.update(</td></tr>
+<tr><td class="ln">105</td><td class="code">                parentId, req.getFirstName(), req.getLastName(), req.getEmail(), principal));</td></tr>
+<tr><td class="ln">106</td><td class="code">    }</td></tr>
+<tr><td class="ln">107</td><td class="code"></td></tr>
+<tr><td class="ln">108</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Inline request DTO ────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">109</td><td class="code"></td></tr>
+<tr><td class="ln">110</td><td class="code">    <span <span class="kw">class</span>="ann">@Getter</span> <span <span class="kw">class</span>="ann">@NoArgsConstructor</span></td></tr>
+<tr><td class="ln">111</td><td class="code">    <span class="kw">public</span> <span class="kw">static</span> <span class="kw">class</span> UpdateParentRequest {</td></tr>
+<tr><td class="ln">112</td><td class="code">        <span class="kw">private</span> String firstName;</td></tr>
+<tr><td class="ln">113</td><td class="code">        <span class="kw">private</span> String lastName;</td></tr>
+<tr><td class="ln">114</td><td class="code">        <span class="kw">private</span> String email;</td></tr>
+<tr><td class="ln">115</td><td class="code">    }</td></tr>
+<tr><td class="ln">116</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

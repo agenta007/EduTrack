@@ -1,0 +1,1 @@
+The Service Layer is the heart of your application. It sits between the Controller (which handles web requests) and the Repository (which handles the database).

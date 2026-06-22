@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ClassService.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>ClassService manages the retrieval and mapping of school class data for the EduTrack system. It provides methods to fetch all classes, classes by school, or a specific class by ID, ensuring proper authorization checks for administrators and headmasters. The service also retrieves student lists associated with a given class. It relies on Spring Data repositories to access SchoolClass, Student, and User entities from the database. Internal helper methods convert entity objects into Data Transfer Objects for API responses. This service acts as a central business logic layer for class-related operations within the application.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.service;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolClassDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.UserSummaryDto;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.SchoolClass;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.User;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.ClassRepository;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.StudentRepository;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.UserRepository;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> org.springframework.stereotype.Service;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> org.springframework.web.server.ResponseStatusException;</td></tr>
+<tr><td class="ln">15</td><td class="code"></td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">17</td><td class="code"></td></tr>
+<tr><td class="ln">18</td><td class="code"><span <span class="kw">class</span>="ann">@Service</span></td></tr>
+<tr><td class="ln">19</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">20</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> ClassService {</td></tr>
+<tr><td class="ln">21</td><td class="code"></td></tr>
+<tr><td class="ln">22</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> ClassRepository   classRepository;</td></tr>
+<tr><td class="ln">23</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> StudentRepository studentRepository;</td></tr>
+<tr><td class="ln">24</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> UserRepository    userRepository;</td></tr>
+<tr><td class="ln">25</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolService     schoolService;</td></tr>
+<tr><td class="ln">26</td><td class="code"></td></tr>
+<tr><td class="ln">27</td><td class="code">    <span class="kw">public</span> List&lt;SchoolClassDto&gt; getAll(UserDetails principal) {</td></tr>
+<tr><td class="ln">28</td><td class="code">        <span <span class="kw">class</span>="cmt">// Determine <span class="kw">if</span> the current user has global administrative privileges</span></td></tr>
+<tr><td class="ln">29</td><td class="code">        <span class="kw">boolean</span> isAdmin = principal.getAuthorities().stream()</td></tr>
+<tr><td class="ln">30</td><td class="code">                .anyMatch(a -&gt; a.getAuthority().equals(<span <span class="kw">class</span>="str">&quot;ROLE_ADMIN&quot;</span>));</td></tr>
+<tr><td class="ln">31</td><td class="code">        <span class="kw">if</span> (isAdmin) {</td></tr>
+<tr><td class="ln">32</td><td class="code">            <span <span class="kw">class</span>="cmt">// Return all classes across all schools <span class="kw">for</span> the admin</span></td></tr>
+<tr><td class="ln">33</td><td class="code">            <span class="kw">return</span> classRepository.findAll().stream().map(<span class="kw">this</span>::toDto).toList();</td></tr>
+<tr><td class="ln">34</td><td class="code">        }</td></tr>
+<tr><td class="ln">35</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the headmaster entity associated with the authenticated user</span></td></tr>
+<tr><td class="ln">36</td><td class="code">        User headmaster = userRepository.findByEmail(principal.getUsername())</td></tr>
+<tr><td class="ln">37</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED));</td></tr>
+<tr><td class="ln">38</td><td class="code">        <span <span class="kw">class</span>="cmt">// Identify the specific school managed by <span class="kw">this</span> headmaster</span></td></tr>
+<tr><td class="ln">39</td><td class="code">        Long schoolId = schoolService.resolveHeadmasterSchool(headmaster).getId();</td></tr>
+<tr><td class="ln">40</td><td class="code">        <span <span class="kw">class</span>="cmt">// Filter classes to only those belonging to the headmaster&#x27;s school</span></td></tr>
+<tr><td class="ln">41</td><td class="code">        <span class="kw">return</span> classRepository.findAllBySchool_Id(schoolId).stream().map(<span class="kw">this</span>::toDto).toList();</td></tr>
+<tr><td class="ln">42</td><td class="code">    }</td></tr>
+<tr><td class="ln">43</td><td class="code"></td></tr>
+<tr><td class="ln">44</td><td class="code">    <span class="kw">public</span> List&lt;SchoolClassDto&gt; getBySchool(Long schoolId) {</td></tr>
+<tr><td class="ln">45</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all school classes associated with the specified school ID and map them to DTOs</span></td></tr>
+<tr><td class="ln">46</td><td class="code">        <span class="kw">return</span> classRepository.findAllBySchool_Id(schoolId).stream()</td></tr>
+<tr><td class="ln">47</td><td class="code">                .map(<span class="kw">this</span>::toDto).toList();</td></tr>
+<tr><td class="ln">48</td><td class="code">    }</td></tr>
+<tr><td class="ln">49</td><td class="code"></td></tr>
+<tr><td class="ln">50</td><td class="code">    <span class="kw">public</span> SchoolClassDto getById(Long id) {</td></tr>
+<tr><td class="ln">51</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school <span class="kw">class</span> by its primary key</span></td></tr>
+<tr><td class="ln">52</td><td class="code">        <span class="kw">return</span> classRepository.findById(id)</td></tr>
+<tr><td class="ln">53</td><td class="code">                <span <span class="kw">class</span>="cmt">// Map the managed SchoolClass entity to a DTO <span class="kw">for</span> the API response</span></td></tr>
+<tr><td class="ln">54</td><td class="code">                .map(<span class="kw">this</span>::toDto)</td></tr>
+<tr><td class="ln">55</td><td class="code">                <span <span class="kw">class</span>="cmt">// Throw a <span <span class="kw">class</span>="num">404</span> Not Found exception <span class="kw">if</span> the <span class="kw">class</span> does not exist in the database</span></td></tr>
+<tr><td class="ln">56</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Class not found&quot;</span>));</td></tr>
+<tr><td class="ln">57</td><td class="code">    }</td></tr>
+<tr><td class="ln">58</td><td class="code"></td></tr>
+<tr><td class="ln">59</td><td class="code">    <span class="kw">public</span> List&lt;UserSummaryDto&gt; getStudents(Long classId) {</td></tr>
+<tr><td class="ln">60</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all students belonging to the specified school <span class="kw">class</span> and map them to a lightweight DTO</span></td></tr>
+<tr><td class="ln">61</td><td class="code">        <span class="kw">return</span> studentRepository.findAllBySchoolClass_Id(classId).stream()</td></tr>
+<tr><td class="ln">62</td><td class="code">                <span <span class="kw">class</span>="cmt">// Transform each Student entity into a UserSummaryDto containing ID and full name</span></td></tr>
+<tr><td class="ln">63</td><td class="code">                .map(s -&gt; <span class="kw">new</span> UserSummaryDto(</td></tr>
+<tr><td class="ln">64</td><td class="code">                        s.getId(),</td></tr>
+<tr><td class="ln">65</td><td class="code">                        s.getUser().getFirstName() + <span <span class="kw">class</span>="str">&quot; &quot;</span> + s.getUser().getLastName()))</td></tr>
+<tr><td class="ln">66</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">67</td><td class="code">    }</td></tr>
+<tr><td class="ln">68</td><td class="code"></td></tr>
+<tr><td class="ln">69</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Helpers ────────────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">70</td><td class="code"></td></tr>
+<tr><td class="ln">71</td><td class="code">    <span class="kw">private</span> SchoolClassDto toDto(SchoolClass c) {</td></tr>
+<tr><td class="ln">72</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the managed SchoolClass entity to a DTO <span class="kw">for</span> API response</span></td></tr>
+<tr><td class="ln">73</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> SchoolClassDto(c.getId(), c.getName(), c.getSchoolYear(),</td></tr>
+<tr><td class="ln">74</td><td class="code">                c.getSchool().getId(), c.getSchool().getName());</td></tr>
+<tr><td class="ln">75</td><td class="code">    }</td></tr>
+<tr><td class="ln">76</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

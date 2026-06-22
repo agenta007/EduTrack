@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>StudentService.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>The StudentService class manages the lifecycle of student enrollments within the EduTrack system, specifically handling the processes of adding and removing students from schools. It provides methods to retrieve a list of available students who are not currently enrolled and to enroll a user by linking them to the headmaster&#x27;s school. The service also supports expelling students by clearing their school association after verifying that the requesting headmaster has authority over that specific student. Internal helper methods ensure that the authenticated user is a valid headmaster and that they are associated with a school before performing any enrollment or expulsion actions. This service acts as the business logic layer for student-school relationships, enforcing role-based access control and data integrity.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.service;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.UserDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.RoleEnum;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.School;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.Student;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.User;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.SchoolRepository;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.StudentRepository;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.UserRepository;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> org.springframework.stereotype.Service;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> org.springframework.web.server.ResponseStatusException;</td></tr>
+<tr><td class="ln">16</td><td class="code"></td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">18</td><td class="code"></td></tr>
+<tr><td class="ln">19</td><td class="code"><span <span class="kw">class</span>="ann">@Service</span></td></tr>
+<tr><td class="ln">20</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> StudentService {</td></tr>
+<tr><td class="ln">22</td><td class="code"></td></tr>
+<tr><td class="ln">23</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> StudentRepository studentRepository;</td></tr>
+<tr><td class="ln">24</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> UserRepository    userRepository;</td></tr>
+<tr><td class="ln">25</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolRepository  schoolRepository;</td></tr>
+<tr><td class="ln">26</td><td class="code"></td></tr>
+<tr><td class="ln">27</td><td class="code">    <span class="kw">public</span> List&lt;UserDto&gt; getAvailable() {</td></tr>
+<tr><td class="ln">28</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all students not currently enrolled in a <span class="kw">class</span> and map them to DTOs</span></td></tr>
+<tr><td class="ln">29</td><td class="code">        <span class="kw">return</span> userRepository.findAvailableStudents().stream()</td></tr>
+<tr><td class="ln">30</td><td class="code">                .map(u -&gt; <span class="kw">new</span> UserDto(u.getId(), u.getFirstName(), u.getLastName(),</td></tr>
+<tr><td class="ln">31</td><td class="code">                        u.getEmail(), u.getRole().getName().name(), <span class="kw">null</span>, <span class="kw">null</span>, u.getBio()))</td></tr>
+<tr><td class="ln">32</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">33</td><td class="code">    }</td></tr>
+<tr><td class="ln">34</td><td class="code"></td></tr>
+<tr><td class="ln">35</td><td class="code">    <span class="kw">public</span> UserDto enroll(Long userId, UserDetails principal) {</td></tr>
+<tr><td class="ln">36</td><td class="code">        <span <span class="kw">class</span>="cmt">// Enroll a user as a student in the headmaster&#x27;s school</span></td></tr>
+<tr><td class="ln">37</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the headmaster performing the action and identify their associated school</span></td></tr>
+<tr><td class="ln">38</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">39</td><td class="code">        School school = resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">40</td><td class="code"></td></tr>
+<tr><td class="ln">41</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the target user entity or fail <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">42</td><td class="code">        User user = userRepository.findById(userId)</td></tr>
+<tr><td class="ln">43</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;User not found&quot;</span>));</td></tr>
+<tr><td class="ln">44</td><td class="code"></td></tr>
+<tr><td class="ln">45</td><td class="code">        <span <span class="kw">class</span>="cmt">// Ensure the target user has the STUDENT role before proceeding</span></td></tr>
+<tr><td class="ln">46</td><td class="code">        <span class="kw">if</span> (user.getRole().getName() != RoleEnum.STUDENT)</td></tr>
+<tr><td class="ln">47</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST, <span <span class="kw">class</span>="str">&quot;User is not a student&quot;</span>);</td></tr>
+<tr><td class="ln">48</td><td class="code"></td></tr>
+<tr><td class="ln">49</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check <span class="kw">if</span> the user is already linked to a student profile and prevent duplicate school enrollment</span></td></tr>
+<tr><td class="ln">50</td><td class="code">        Student student = studentRepository.findById(userId).orElse(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">51</td><td class="code">        <span class="kw">if</span> (student != <span class="kw">null</span> &amp;&amp; student.getSchool() != <span class="kw">null</span>)</td></tr>
+<tr><td class="ln">52</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.CONFLICT, <span <span class="kw">class</span>="str">&quot;Student is already enrolled in a school&quot;</span>);</td></tr>
+<tr><td class="ln">53</td><td class="code"></td></tr>
+<tr><td class="ln">54</td><td class="code">        <span <span class="kw">class</span>="cmt">// Create a <span class="kw">new</span> Student record <span class="kw">if</span> none exists, otherwise update the existing student&#x27;s school association</span></td></tr>
+<tr><td class="ln">55</td><td class="code">        <span class="kw">if</span> (student == <span class="kw">null</span>) {</td></tr>
+<tr><td class="ln">56</td><td class="code">            student = Student.builder().id(userId).user(user).school(school).build();</td></tr>
+<tr><td class="ln">57</td><td class="code">        } <span class="kw">else</span> {</td></tr>
+<tr><td class="ln">58</td><td class="code">            student.setSchool(school);</td></tr>
+<tr><td class="ln">59</td><td class="code">        }</td></tr>
+<tr><td class="ln">60</td><td class="code"></td></tr>
+<tr><td class="ln">61</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the changes to the student repository</span></td></tr>
+<tr><td class="ln">62</td><td class="code">        studentRepository.save(student);</td></tr>
+<tr><td class="ln">63</td><td class="code">        <span <span class="kw">class</span>="cmt">// Return the populated DTO containing user and school details</span></td></tr>
+<tr><td class="ln">64</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> UserDto(user.getId(), user.getFirstName(), user.getLastName(),</td></tr>
+<tr><td class="ln">65</td><td class="code">                user.getEmail(), user.getRole().getName().name(),</td></tr>
+<tr><td class="ln">66</td><td class="code">                school.getId(), school.getName(), user.getBio());</td></tr>
+<tr><td class="ln">67</td><td class="code">    }</td></tr>
+<tr><td class="ln">68</td><td class="code"></td></tr>
+<tr><td class="ln">69</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> expel(Long studentId, UserDetails principal) {</td></tr>
+<tr><td class="ln">70</td><td class="code">        <span <span class="kw">class</span>="cmt">// Remove a student from the school&#x27;s registry by clearing their school association</span></td></tr>
+<tr><td class="ln">71</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the headmaster from the security context</span></td></tr>
+<tr><td class="ln">72</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">73</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school managed by the authenticated headmaster</span></td></tr>
+<tr><td class="ln">74</td><td class="code">        School school = resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">75</td><td class="code"></td></tr>
+<tr><td class="ln">76</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed Student entity or <span class="kw">return</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> not found</span></td></tr>
+<tr><td class="ln">77</td><td class="code">        Student student = studentRepository.findById(studentId)</td></tr>
+<tr><td class="ln">78</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Student not found&quot;</span>));</td></tr>
+<tr><td class="ln">79</td><td class="code"></td></tr>
+<tr><td class="ln">80</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check the headmaster&#x27;s authority on <span class="kw">this</span> student by verifying school membership</span></td></tr>
+<tr><td class="ln">81</td><td class="code">        <span class="kw">if</span> (student.getSchool() == <span class="kw">null</span> || !student.getSchool().getId().equals(school.getId()))</td></tr>
+<tr><td class="ln">82</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.FORBIDDEN, <span <span class="kw">class</span>="str">&quot;Student does not belong to <span class="kw">this</span> school&quot;</span>);</td></tr>
+<tr><td class="ln">83</td><td class="code"></td></tr>
+<tr><td class="ln">84</td><td class="code">        <span <span class="kw">class</span>="cmt">// Clear the school relationship to finalize the expulsion</span></td></tr>
+<tr><td class="ln">85</td><td class="code">        student.setSchool(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">86</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the changes to the database</span></td></tr>
+<tr><td class="ln">87</td><td class="code">        studentRepository.save(student);</td></tr>
+<tr><td class="ln">88</td><td class="code">    }</td></tr>
+<tr><td class="ln">89</td><td class="code"></td></tr>
+<tr><td class="ln">90</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Helpers ────────────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">91</td><td class="code"></td></tr>
+<tr><td class="ln">92</td><td class="code">    <span class="kw">private</span> User resolveUser(UserDetails principal) {</td></tr>
+<tr><td class="ln">93</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed User entity from the database using the email from the authenticated principal</span></td></tr>
+<tr><td class="ln">94</td><td class="code">        <span class="kw">return</span> userRepository.findByEmail(principal.getUsername())</td></tr>
+<tr><td class="ln">95</td><td class="code">                <span <span class="kw">class</span>="cmt">// Throw a <span <span class="kw">class</span>="num">401</span> Unauthorized exception <span class="kw">if</span> the user cannot be found in the system</span></td></tr>
+<tr><td class="ln">96</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED));</td></tr>
+<tr><td class="ln">97</td><td class="code">    }</td></tr>
+<tr><td class="ln">98</td><td class="code"></td></tr>
+<tr><td class="ln">99</td><td class="code">    <span <span class="kw">class</span>="cmt">// Retrieve the school managed by the given headmaster</span></td></tr>
+<tr><td class="ln">100</td><td class="code">    <span class="kw">private</span> School resolveHeadmasterSchool(User headmaster) {</td></tr>
+<tr><td class="ln">101</td><td class="code">        <span <span class="kw">class</span>="cmt">// Query the repository <span class="kw">for</span> the school where <span class="kw">this</span> user is the director</span></td></tr>
+<tr><td class="ln">102</td><td class="code">        <span class="kw">return</span> schoolRepository.findByDirector_Id(headmaster.getId())</td></tr>
+<tr><td class="ln">103</td><td class="code">                <span <span class="kw">class</span>="cmt">// Throw a <span <span class="kw">class</span>="num">400</span> Bad Request <span class="kw">if</span> the headmaster is not linked to a school</span></td></tr>
+<tr><td class="ln">104</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST,</td></tr>
+<tr><td class="ln">105</td><td class="code">                        <span <span class="kw">class</span>="str">&quot;No school assigned to <span class="kw">this</span> headmaster&quot;</span>));</td></tr>
+<tr><td class="ln">106</td><td class="code">    }</td></tr>
+<tr><td class="ln">107</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

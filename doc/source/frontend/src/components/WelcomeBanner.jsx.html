@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>WelcomeBanner.jsx</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This component renders a personalized dashboard header for the EduTrack system based on the current user&#x27;s role. It displays a hero section with the user&#x27;s avatar, name, email, and a color-coded role chip for immediate identification. The component dynamically generates a set of quick-access navigation tiles using a helper function that maps specific roles like admin, teacher, or student to relevant system paths. Each tile includes an icon and label that trigger client-side routing to the appropriate section when clicked. This ensures that users only see actions and links relevant to their permissions and current context within the school e-journal.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">import</span> React <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span>;</td></tr>
+<tr><td class="ln">2</td><td class="code"><span class="kw">import</span> {</td></tr>
+<tr><td class="ln">3</td><td class="code">  Box, Card, CardActionArea, CardContent, Chip, Paper, Typography,</td></tr>
+<tr><td class="ln">4</td><td class="code">} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/material&#x27;</span>;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> {</td></tr>
+<tr><td class="ln">6</td><td class="code">  BarChart as StatsIcon,</td></tr>
+<tr><td class="ln">7</td><td class="code">  ManageAccounts,</td></tr>
+<tr><td class="ln">8</td><td class="code">  CalendarMonth as ScheduleIcon,</td></tr>
+<tr><td class="ln">9</td><td class="code">  Book as SubjectIcon,</td></tr>
+<tr><td class="ln">10</td><td class="code">  Business as SchoolIcon,</td></tr>
+<tr><td class="ln">11</td><td class="code">  Grade as GradeIcon,</td></tr>
+<tr><td class="ln">12</td><td class="code">  EventBusy as AbsenceIcon,</td></tr>
+<tr><td class="ln">13</td><td class="code">  Report as ComplaintIcon,</td></tr>
+<tr><td class="ln">14</td><td class="code">  Work as TeacherIcon,</td></tr>
+<tr><td class="ln">15</td><td class="code">  EscalatorWarning as ParentIcon,</td></tr>
+<tr><td class="ln">16</td><td class="code">  School as StudentIcon,</td></tr>
+<tr><td class="ln">17</td><td class="code">  AccountCircle as ProfileIcon,</td></tr>
+<tr><td class="ln">18</td><td class="code">} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/icons-material&#x27;</span>;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> { useNavigate } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-router-dom&#x27;</span>;</td></tr>
+<tr><td class="ln">20</td><td class="code"><span class="kw">import</span> { useTranslation } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-i18next&#x27;</span>;</td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> useAuth <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../hooks/useAuth&#x27;</span>;</td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">import</span> { useStudent } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../context/StudentContext&#x27;</span>;</td></tr>
+<tr><td class="ln">23</td><td class="code"><span class="kw">import</span> UserAvatar <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;./UserAvatar&#x27;</span>;</td></tr>
+<tr><td class="ln">24</td><td class="code"></td></tr>
+<tr><td class="ln">25</td><td class="code"><span class="kw">const</span> ROLE_CHIP_COLOR = {</td></tr>
+<tr><td class="ln">26</td><td class="code">  ADMIN:      <span <span class="kw">class</span>="str">&#x27;error&#x27;</span>,</td></tr>
+<tr><td class="ln">27</td><td class="code">  HEADMASTER: <span <span class="kw">class</span>="str">&#x27;primary&#x27;</span>,</td></tr>
+<tr><td class="ln">28</td><td class="code">  TEACHER:    <span <span class="kw">class</span>="str">&#x27;success&#x27;</span>,</td></tr>
+<tr><td class="ln">29</td><td class="code">  STUDENT:    <span <span class="kw">class</span>="str">&#x27;info&#x27;</span>,</td></tr>
+<tr><td class="ln">30</td><td class="code">  PARENT:     <span <span class="kw">class</span>="str">&#x27;warning&#x27;</span>,</td></tr>
+<tr><td class="ln">31</td><td class="code">};</td></tr>
+<tr><td class="ln">32</td><td class="code"></td></tr>
+<tr><td class="ln">33</td><td class="code"><span class="kw">function</span> QuickCard({ icon, label, onClick }) {</td></tr>
+<tr><td class="ln">34</td><td class="code">  <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">35</td><td class="code">    &lt;Card variant=<span <span class="kw">class</span>="str">&quot;outlined&quot;</span> sx={{ width: <span <span class="kw">class</span>="num">140</span>, flexShrink: <span <span class="kw">class</span>="num">0</span> }}&gt;</td></tr>
+<tr><td class="ln">36</td><td class="code">      &lt;CardActionArea onClick={onClick} sx={{ height: <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="num">100</span>%&#x27;</span> }}&gt;</td></tr>
+<tr><td class="ln">37</td><td class="code">        &lt;CardContent sx={{</td></tr>
+<tr><td class="ln">38</td><td class="code">          display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, flexDirection: <span <span class="kw">class</span>="str">&#x27;column&#x27;</span>, alignItems: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span>,</td></tr>
+<tr><td class="ln">39</td><td class="code">          gap: <span <span class="kw">class</span>="num">1</span>, py: <span <span class="kw">class</span>="num">2.5</span>, px: <span <span class="kw">class</span>="num">1.5</span>,</td></tr>
+<tr><td class="ln">40</td><td class="code">        }}&gt;</td></tr>
+<tr><td class="ln">41</td><td class="code">          &lt;Box sx={{ color: <span <span class="kw">class</span>="str">&#x27;primary.main&#x27;</span>, &#x27;&amp; svg&#x27;: { fontSize: <span <span class="kw">class</span>="num">30</span> } }}&gt;{icon}&lt;/Box&gt;</td></tr>
+<tr><td class="ln">42</td><td class="code">          &lt;Typography variant=<span <span class="kw">class</span>="str">&quot;body2&quot;</span> fontWeight={<span <span class="kw">class</span>="num">600</span>} textAlign=<span <span class="kw">class</span>="str">&quot;center&quot;</span> sx={{ lineHeight: <span <span class="kw">class</span>="num">1.3</span> }}&gt;</td></tr>
+<tr><td class="ln">43</td><td class="code">            {label}</td></tr>
+<tr><td class="ln">44</td><td class="code">          &lt;/Typography&gt;</td></tr>
+<tr><td class="ln">45</td><td class="code">        &lt;/CardContent&gt;</td></tr>
+<tr><td class="ln">46</td><td class="code">      &lt;/CardActionArea&gt;</td></tr>
+<tr><td class="ln">47</td><td class="code">    &lt;/Card&gt;</td></tr>
+<tr><td class="ln">48</td><td class="code">  );</td></tr>
+<tr><td class="ln">49</td><td class="code">}</td></tr>
+<tr><td class="ln">50</td><td class="code"></td></tr>
+<tr><td class="ln">51</td><td class="code"><span class="kw">function</span> WelcomeBanner() {</td></tr>
+<tr><td class="ln">52</td><td class="code">  <span class="kw">const</span> { t } = useTranslation();</td></tr>
+<tr><td class="ln">53</td><td class="code">  <span class="kw">const</span> { user } = useAuth();</td></tr>
+<tr><td class="ln">54</td><td class="code">  <span class="kw">const</span> { selectedStudent } = useStudent();</td></tr>
+<tr><td class="ln">55</td><td class="code">  <span class="kw">const</span> navigate = useNavigate();</td></tr>
+<tr><td class="ln">56</td><td class="code"></td></tr>
+<tr><td class="ln">57</td><td class="code">  <span class="kw">const</span> actions = (() =&gt; {</td></tr>
+<tr><td class="ln">58</td><td class="code">    <span class="kw">switch</span> (user?.role) {</td></tr>
+<tr><td class="ln">59</td><td class="code">      <span class="kw">case</span> <span <span class="kw">class</span>="str">&#x27;ADMIN&#x27;</span>:</td></tr>
+<tr><td class="ln">60</td><td class="code">        <span class="kw">return</span> [</td></tr>
+<tr><td class="ln">61</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.manageUsers&#x27;</span>), icon: &lt;ManageAccounts /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/admin/manageUsers&#x27;</span> },</td></tr>
+<tr><td class="ln">62</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.schools&#x27;</span>),     icon: &lt;SchoolIcon /&gt;,     path: <span <span class="kw">class</span>="str">&#x27;/admin/viewSchools&#x27;</span> },</td></tr>
+<tr><td class="ln">63</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.subjects&#x27;</span>),    icon: &lt;SubjectIcon /&gt;,    path: <span <span class="kw">class</span>="str">&#x27;/admin/viewSubjects&#x27;</span> },</td></tr>
+<tr><td class="ln">64</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.statistics&#x27;</span>),  icon: &lt;StatsIcon /&gt;,      path: <span <span class="kw">class</span>="str">&#x27;/select/school/statistics&#x27;</span> },</td></tr>
+<tr><td class="ln">65</td><td class="code">        ];</td></tr>
+<tr><td class="ln">66</td><td class="code">      <span class="kw">case</span> <span <span class="kw">class</span>="str">&#x27;HEADMASTER&#x27;</span>:</td></tr>
+<tr><td class="ln">67</td><td class="code">        <span class="kw">return</span> [</td></tr>
+<tr><td class="ln">68</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.teachers&#x27;</span>),   icon: &lt;TeacherIcon /&gt;,  path: <span <span class="kw">class</span>="str">&#x27;/headmaster/viewTeachers&#x27;</span> },</td></tr>
+<tr><td class="ln">69</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.students&#x27;</span>),   icon: &lt;StudentIcon /&gt;,  path: <span <span class="kw">class</span>="str">&#x27;/headmaster/viewStudents&#x27;</span> },</td></tr>
+<tr><td class="ln">70</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.parents&#x27;</span>),    icon: &lt;ParentIcon /&gt;,   path: <span <span class="kw">class</span>="str">&#x27;/headmaster/viewParents&#x27;</span> },</td></tr>
+<tr><td class="ln">71</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>),     icon: &lt;GradeIcon /&gt;,    path: <span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/grades&#x27;</span> },</td></tr>
+<tr><td class="ln">72</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>),   icon: &lt;AbsenceIcon /&gt;,  path: <span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/absences&#x27;</span> },</td></tr>
+<tr><td class="ln">73</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.subjects&#x27;</span>),   icon: &lt;SubjectIcon /&gt;,  path: <span <span class="kw">class</span>="str">&#x27;/admin/viewSubjects&#x27;</span> },</td></tr>
+<tr><td class="ln">74</td><td class="code">        ];</td></tr>
+<tr><td class="ln">75</td><td class="code">      <span class="kw">case</span> <span <span class="kw">class</span>="str">&#x27;TEACHER&#x27;</span>:</td></tr>
+<tr><td class="ln">76</td><td class="code">        <span class="kw">return</span> [</td></tr>
+<tr><td class="ln">77</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.schedule&#x27;</span>),   icon: &lt;ScheduleIcon /&gt;,  path: <span <span class="kw">class</span>="str">`/teacher/teacherSchedule/${user.id}`</span> },</td></tr>
+<tr><td class="ln">78</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.mySchool&#x27;</span>),   icon: &lt;SchoolIcon /&gt;,    path: <span <span class="kw">class</span>="str">&#x27;/teacher/school&#x27;</span> },</td></tr>
+<tr><td class="ln">79</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>),     icon: &lt;GradeIcon /&gt;,     path: <span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/grades&#x27;</span> },</td></tr>
+<tr><td class="ln">80</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>),   icon: &lt;AbsenceIcon /&gt;,   path: <span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/absences&#x27;</span> },</td></tr>
+<tr><td class="ln">81</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.complaints&#x27;</span>), icon: &lt;ComplaintIcon /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/complaints&#x27;</span> },</td></tr>
+<tr><td class="ln">82</td><td class="code">        ];</td></tr>
+<tr><td class="ln">83</td><td class="code">      <span class="kw">case</span> <span <span class="kw">class</span>="str">&#x27;STUDENT&#x27;</span>:</td></tr>
+<tr><td class="ln">84</td><td class="code">        <span class="kw">return</span> [</td></tr>
+<tr><td class="ln">85</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>),   icon: &lt;GradeIcon /&gt;,   path: <span <span class="kw">class</span>="str">&#x27;/grades/me&#x27;</span> },</td></tr>
+<tr><td class="ln">86</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/absences/me&#x27;</span> },</td></tr>
+<tr><td class="ln">87</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>),  icon: &lt;ProfileIcon /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/profile&#x27;</span> },</td></tr>
+<tr><td class="ln">88</td><td class="code">        ];</td></tr>
+<tr><td class="ln">89</td><td class="code">      <span class="kw">case</span> <span <span class="kw">class</span>="str">&#x27;PARENT&#x27;</span>:</td></tr>
+<tr><td class="ln">90</td><td class="code">        <span class="kw">return</span> selectedStudent ? [</td></tr>
+<tr><td class="ln">91</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.grades&#x27;</span>),   icon: &lt;GradeIcon /&gt;,   path: <span <span class="kw">class</span>="str">`/grades/student/${selectedStudent.id}`</span> },</td></tr>
+<tr><td class="ln">92</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.absences&#x27;</span>), icon: &lt;AbsenceIcon /&gt;, path: <span <span class="kw">class</span>="str">`/absences/student/${selectedStudent.id}`</span> },</td></tr>
+<tr><td class="ln">93</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>),  icon: &lt;ProfileIcon /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/profile&#x27;</span> },</td></tr>
+<tr><td class="ln">94</td><td class="code">        ] : [</td></tr>
+<tr><td class="ln">95</td><td class="code">          { label: t(<span <span class="kw">class</span>="str">&#x27;nav.profile&#x27;</span>),  icon: &lt;ProfileIcon /&gt;, path: <span <span class="kw">class</span>="str">&#x27;/profile&#x27;</span> },</td></tr>
+<tr><td class="ln">96</td><td class="code">        ];</td></tr>
+<tr><td class="ln">97</td><td class="code">      <span class="kw">default</span>:</td></tr>
+<tr><td class="ln">98</td><td class="code">        <span class="kw">return</span> [];</td></tr>
+<tr><td class="ln">99</td><td class="code">    }</td></tr>
+<tr><td class="ln">100</td><td class="code">  })();</td></tr>
+<tr><td class="ln">101</td><td class="code"></td></tr>
+<tr><td class="ln">102</td><td class="code">  <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">103</td><td class="code">    &lt;Box sx={{ p: <span <span class="kw">class</span>="num">3</span>, maxWidth: <span <span class="kw">class</span>="num">760</span> }}&gt;</td></tr>
+<tr><td class="ln">104</td><td class="code"></td></tr>
+<tr><td class="ln">105</td><td class="code">      {/* ── Hero card ─────────────────────────────────────────────────── */}</td></tr>
+<tr><td class="ln">106</td><td class="code">      &lt;Paper</td></tr>
+<tr><td class="ln">107</td><td class="code">        variant=<span <span class="kw">class</span>="str">&quot;outlined&quot;</span></td></tr>
+<tr><td class="ln">108</td><td class="code">        sx={{ p: <span <span class="kw">class</span>="num">3</span>, mb: <span <span class="kw">class</span>="num">3</span>, display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, alignItems: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span>, gap: <span <span class="kw">class</span>="num">3</span>, flexWrap: <span <span class="kw">class</span>="str">&#x27;wrap&#x27;</span> }}</td></tr>
+<tr><td class="ln">109</td><td class="code">      &gt;</td></tr>
+<tr><td class="ln">110</td><td class="code">        &lt;UserAvatar userId={user?.id} name={user?.name} size={<span <span class="kw">class</span>="num">96</span>} /&gt;</td></tr>
+<tr><td class="ln">111</td><td class="code">        &lt;Box&gt;</td></tr>
+<tr><td class="ln">112</td><td class="code">          &lt;Typography variant=<span <span class="kw">class</span>="str">&quot;h5&quot;</span> fontWeight={<span <span class="kw">class</span>="num">700</span>} gutterBottom&gt;</td></tr>
+<tr><td class="ln">113</td><td class="code">            {t(<span <span class="kw">class</span>="str">`welcome.${user?.role}`</span>, { name: user?.name })}</td></tr>
+<tr><td class="ln">114</td><td class="code">          &lt;/Typography&gt;</td></tr>
+<tr><td class="ln">115</td><td class="code">          &lt;Typography variant=<span <span class="kw">class</span>="str">&quot;body2&quot;</span> color=<span <span class="kw">class</span>="str">&quot;text.secondary&quot;</span> sx={{ mb: <span <span class="kw">class</span>="num">1</span> }}&gt;</td></tr>
+<tr><td class="ln">116</td><td class="code">            {user?.email}</td></tr>
+<tr><td class="ln">117</td><td class="code">          &lt;/Typography&gt;</td></tr>
+<tr><td class="ln">118</td><td class="code">          &lt;Chip label={t(<span <span class="kw">class</span>="str">`roles.${user?.role}`</span>)} color={ROLE_CHIP_COLOR[user?.role] ?? <span <span class="kw">class</span>="str">&#x27;<span class="kw">default</span>&#x27;</span>} size=<span <span class="kw">class</span>="str">&quot;small&quot;</span> /&gt;</td></tr>
+<tr><td class="ln">119</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">120</td><td class="code">      &lt;/Paper&gt;</td></tr>
+<tr><td class="ln">121</td><td class="code"></td></tr>
+<tr><td class="ln">122</td><td class="code">      {/* ── Quick-access tiles ────────────────────────────────────────── */}</td></tr>
+<tr><td class="ln">123</td><td class="code">      {actions.length &gt; <span <span class="kw">class</span>="num">0</span> &amp;&amp; (</td></tr>
+<tr><td class="ln">124</td><td class="code">        &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, flexWrap: <span <span class="kw">class</span>="str">&#x27;wrap&#x27;</span>, gap: <span <span class="kw">class</span>="num">2</span> }}&gt;</td></tr>
+<tr><td class="ln">125</td><td class="code">          {actions.map(({ label, icon, path }) =&gt; (</td></tr>
+<tr><td class="ln">126</td><td class="code">            &lt;QuickCard key={path} label={label} icon={icon} onClick={() =&gt; navigate(path)} /&gt;</td></tr>
+<tr><td class="ln">127</td><td class="code">          ))}</td></tr>
+<tr><td class="ln">128</td><td class="code">        &lt;/Box&gt;</td></tr>
+<tr><td class="ln">129</td><td class="code">      )}</td></tr>
+<tr><td class="ln">130</td><td class="code"></td></tr>
+<tr><td class="ln">131</td><td class="code">    &lt;/Box&gt;</td></tr>
+<tr><td class="ln">132</td><td class="code">  );</td></tr>
+<tr><td class="ln">133</td><td class="code">}</td></tr>
+<tr><td class="ln">134</td><td class="code"></td></tr>
+<tr><td class="ln">135</td><td class="code"><span class="kw">export</span> <span class="kw">default</span> WelcomeBanner;</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Read log directory from application.properties (falls back to "logs") -->
+    <springProperty name="LOG_PATH" source="app.logging.path" defaultValue="logs"/>
+
+    <!-- ── Console appender ──────────────────────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── General application log (rolling daily, keep 30 days) ─────────── -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/e-journal.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/e-journal.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── HTTP request log — RequestLoggingFilter output only ───────────── -->
+    <appender name="REQUEST_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/requests.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/requests.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Logger for RequestLoggingFilter → requests.log only ──────────── -->
+    <logger name="com.edutrack.e_journal.security.RequestLoggingFilter"
+            level="INFO"
+            additivity="false">
+        <appender-ref ref="REQUEST_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- ── Logger for JwtAuthenticationFilter → app log only ─────────────── -->
+    <logger name="com.edutrack.e_journal.security.JwtAuthenticationFilter"
+            level="INFO"
+            additivity="false">
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- ── Suppress noisy but harmless Hibernate/Spring INFO messages ──── -->
+    <logger name="org.hibernate.orm.core"             level="WARN"/>
+    <logger name="org.hibernate.engine.transaction"   level="WARN"/>
+    <logger name="org.springframework.orm.jpa"        level="WARN"/>
+
+    <!-- ── Root logger ───────────────────────────────────────────────────── -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="APP_FILE"/>
+    </root>
+
+</configuration>

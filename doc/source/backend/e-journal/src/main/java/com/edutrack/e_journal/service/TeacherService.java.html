@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>TeacherService.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>The TeacherService class manages the lifecycle of teacher accounts and their association with schools within the EduTrack system. It provides methods for headmasters to hire new teachers, assign existing users to schools, and terminate employment by removing school links. The service enforces strict access controls to ensure only authorized headmasters can modify teacher records for their specific institutions. It handles data validation by checking for duplicate emails and preventing teachers from being assigned to multiple schools simultaneously. Additionally, it supports retrieving teacher lists and updating salary information while maintaining data integrity through repository interactions.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.service;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.TeacherDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.UserDto;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.*;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.*;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> org.springframework.security.crypto.password.PasswordEncoder;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> org.springframework.stereotype.Service;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> org.springframework.web.server.ResponseStatusException;</td></tr>
+<tr><td class="ln">13</td><td class="code"></td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> java.math.BigDecimal;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> java.util.HashSet;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> java.util.Set;</td></tr>
+<tr><td class="ln">18</td><td class="code"></td></tr>
+<tr><td class="ln">19</td><td class="code"><span <span class="kw">class</span>="ann">@Service</span></td></tr>
+<tr><td class="ln">20</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> TeacherService {</td></tr>
+<tr><td class="ln">22</td><td class="code"></td></tr>
+<tr><td class="ln">23</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> TeacherRepository  teacherRepository;</td></tr>
+<tr><td class="ln">24</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> UserRepository     userRepository;</td></tr>
+<tr><td class="ln">25</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> RoleRepository     roleRepository;</td></tr>
+<tr><td class="ln">26</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolRepository   schoolRepository;</td></tr>
+<tr><td class="ln">27</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> ScheduleRepository scheduleRepository;</td></tr>
+<tr><td class="ln">28</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SubjectRepository  subjectRepository;</td></tr>
+<tr><td class="ln">29</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolService      schoolService;</td></tr>
+<tr><td class="ln">30</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> PasswordEncoder    passwordEncoder;</td></tr>
+<tr><td class="ln">31</td><td class="code"></td></tr>
+<tr><td class="ln">32</td><td class="code">    <span class="kw">public</span> List&lt;TeacherDto&gt; getBySchool(Long schoolId, UserDetails principal) {</td></tr>
+<tr><td class="ln">33</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify that the authenticated headmaster has authority over the requested school</span></td></tr>
+<tr><td class="ln">34</td><td class="code">        schoolService.checkHeadmasterSchoolAccess(principal, schoolId);</td></tr>
+<tr><td class="ln">35</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load all teachers belonging to the school and map them to DTOs</span></td></tr>
+<tr><td class="ln">36</td><td class="code">        <span class="kw">return</span> teacherRepository.findAllBySchool_Id(schoolId).stream()</td></tr>
+<tr><td class="ln">37</td><td class="code">                .map(<span class="kw">this</span>::toDto).toList();</td></tr>
+<tr><td class="ln">38</td><td class="code">    }</td></tr>
+<tr><td class="ln">39</td><td class="code"></td></tr>
+<tr><td class="ln">40</td><td class="code">    <span class="kw">public</span> List&lt;UserDto&gt; getAvailable() {</td></tr>
+<tr><td class="ln">41</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all users eligible <span class="kw">for</span> hiring/assignment and map them to a lightweight DTO</span></td></tr>
+<tr><td class="ln">42</td><td class="code">        <span class="kw">return</span> userRepository.findAvailableTeachers().stream()</td></tr>
+<tr><td class="ln">43</td><td class="code">                <span <span class="kw">class</span>="cmt">// Transform the managed User entities into UserDto objects <span class="kw">for</span> the API response</span></td></tr>
+<tr><td class="ln">44</td><td class="code">                .map(u -&gt; <span class="kw">new</span> UserDto(u.getId(), u.getFirstName(), u.getLastName(),</td></tr>
+<tr><td class="ln">45</td><td class="code">                        u.getEmail(), u.getRole().getName().name(), <span class="kw">null</span>, <span class="kw">null</span>, u.getBio()))</td></tr>
+<tr><td class="ln">46</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">47</td><td class="code">    }</td></tr>
+<tr><td class="ln">48</td><td class="code"></td></tr>
+<tr><td class="ln">49</td><td class="code">    <span class="kw">public</span> TeacherDto createAndHire(String firstName, String lastName, String email,</td></tr>
+<tr><td class="ln">50</td><td class="code">                                    String password, UserDetails principal) {</td></tr>
+<tr><td class="ln">51</td><td class="code">        <span class="kw">if</span> (userRepository.existsByEmail(email))</td></tr>
+<tr><td class="ln">52</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.CONFLICT, <span <span class="kw">class</span>="str">&quot;Email already in use&quot;</span>);</td></tr>
+<tr><td class="ln">53</td><td class="code"></td></tr>
+<tr><td class="ln">54</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">55</td><td class="code">        School school   = schoolService.resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">56</td><td class="code"></td></tr>
+<tr><td class="ln">57</td><td class="code">        Role teacherRole = roleRepository.findByName(RoleEnum.TEACHER)</td></tr>
+<tr><td class="ln">58</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, <span <span class="kw">class</span>="str">&quot;TEACHER role not found&quot;</span>));</td></tr>
+<tr><td class="ln">59</td><td class="code"></td></tr>
+<tr><td class="ln">60</td><td class="code">        User user = User.builder()</td></tr>
+<tr><td class="ln">61</td><td class="code">                .firstName(firstName)</td></tr>
+<tr><td class="ln">62</td><td class="code">                .lastName(lastName)</td></tr>
+<tr><td class="ln">63</td><td class="code">                .email(email)</td></tr>
+<tr><td class="ln">64</td><td class="code">                .passwordHash(passwordEncoder.encode(password))</td></tr>
+<tr><td class="ln">65</td><td class="code">                .role(teacherRole)</td></tr>
+<tr><td class="ln">66</td><td class="code">                .build();</td></tr>
+<tr><td class="ln">67</td><td class="code">        userRepository.save(user);</td></tr>
+<tr><td class="ln">68</td><td class="code"></td></tr>
+<tr><td class="ln">69</td><td class="code">        Teacher teacher = Teacher.builder().id(user.getId()).user(user).school(school).build();</td></tr>
+<tr><td class="ln">70</td><td class="code">        teacherRepository.save(teacher);</td></tr>
+<tr><td class="ln">71</td><td class="code"></td></tr>
+<tr><td class="ln">72</td><td class="code">        <span class="kw">return</span> toDto(teacher);</td></tr>
+<tr><td class="ln">73</td><td class="code">    }</td></tr>
+<tr><td class="ln">74</td><td class="code"></td></tr>
+<tr><td class="ln">75</td><td class="code">    <span class="kw">public</span> UserDto hire(Long userId, UserDetails principal) {</td></tr>
+<tr><td class="ln">76</td><td class="code">        <span <span class="kw">class</span>="cmt">// Resolve the headmaster from the security context and identify their school</span></td></tr>
+<tr><td class="ln">77</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">78</td><td class="code">        School school = schoolService.resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">79</td><td class="code"></td></tr>
+<tr><td class="ln">80</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the target user entity or fail <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">81</td><td class="code">        User user = userRepository.findById(userId)</td></tr>
+<tr><td class="ln">82</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;User not found&quot;</span>));</td></tr>
+<tr><td class="ln">83</td><td class="code"></td></tr>
+<tr><td class="ln">84</td><td class="code">        <span <span class="kw">class</span>="cmt">// Ensure the target user has the appropriate TEACHER role <span class="kw">for</span> <span class="kw">this</span> operation</span></td></tr>
+<tr><td class="ln">85</td><td class="code">        <span class="kw">if</span> (user.getRole().getName() != RoleEnum.TEACHER)</td></tr>
+<tr><td class="ln">86</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST, <span <span class="kw">class</span>="str">&quot;User is not a teacher&quot;</span>);</td></tr>
+<tr><td class="ln">87</td><td class="code"></td></tr>
+<tr><td class="ln">88</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check <span class="kw">if</span> the user is already an active teacher in another school to prevent duplicate assignments</span></td></tr>
+<tr><td class="ln">89</td><td class="code">        Teacher teacher = teacherRepository.findById(userId).orElse(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">90</td><td class="code">        <span class="kw">if</span> (teacher != <span class="kw">null</span> &amp;&amp; teacher.getSchool() != <span class="kw">null</span>)</td></tr>
+<tr><td class="ln">91</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.CONFLICT, <span <span class="kw">class</span>="str">&quot;Teacher is already assigned to a school&quot;</span>);</td></tr>
+<tr><td class="ln">92</td><td class="code"></td></tr>
+<tr><td class="ln">93</td><td class="code">        <span <span class="kw">class</span>="cmt">// Create a <span class="kw">new</span> Teacher record or update the existing one with the current school</span></td></tr>
+<tr><td class="ln">94</td><td class="code">        <span class="kw">if</span> (teacher == <span class="kw">null</span>) {</td></tr>
+<tr><td class="ln">95</td><td class="code">            teacher = Teacher.builder().id(userId).user(user).school(school).build();</td></tr>
+<tr><td class="ln">96</td><td class="code">        } <span class="kw">else</span> {</td></tr>
+<tr><td class="ln">97</td><td class="code">            teacher.setSchool(school);</td></tr>
+<tr><td class="ln">98</td><td class="code">        }</td></tr>
+<tr><td class="ln">99</td><td class="code"></td></tr>
+<tr><td class="ln">100</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the teacher assignment and <span class="kw">return</span> the populated DTO</span></td></tr>
+<tr><td class="ln">101</td><td class="code">        teacherRepository.save(teacher);</td></tr>
+<tr><td class="ln">102</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> UserDto(user.getId(), user.getFirstName(), user.getLastName(),</td></tr>
+<tr><td class="ln">103</td><td class="code">                user.getEmail(), user.getRole().getName().name(),</td></tr>
+<tr><td class="ln">104</td><td class="code">                school.getId(), school.getName(), user.getBio());</td></tr>
+<tr><td class="ln">105</td><td class="code">    }</td></tr>
+<tr><td class="ln">106</td><td class="code"></td></tr>
+<tr><td class="ln">107</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> fire(Long teacherId, UserDetails principal) {</td></tr>
+<tr><td class="ln">108</td><td class="code">        <span <span class="kw">class</span>="cmt">// Identify the headmaster from the security context and resolve their associated school</span></td></tr>
+<tr><td class="ln">109</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">110</td><td class="code">        School school = schoolService.resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">111</td><td class="code"></td></tr>
+<tr><td class="ln">112</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed Teacher entity or <span class="kw">return</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">113</td><td class="code">        Teacher teacher = teacherRepository.findById(teacherId)</td></tr>
+<tr><td class="ln">114</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Teacher not found&quot;</span>));</td></tr>
+<tr><td class="ln">115</td><td class="code"></td></tr>
+<tr><td class="ln">116</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the teacher<span <span class="kw">class</span>="str">&#x27;s authority by checking <span class="kw">if</span> they belong to the headmaster&#x27;</span>s school</span></td></tr>
+<tr><td class="ln">117</td><td class="code">        <span class="kw">if</span> (teacher.getSchool() == <span class="kw">null</span> || !teacher.getSchool().getId().equals(school.getId()))</td></tr>
+<tr><td class="ln">118</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.FORBIDDEN, <span <span class="kw">class</span>="str">&quot;Teacher does not belong to <span class="kw">this</span> school&quot;</span>);</td></tr>
+<tr><td class="ln">119</td><td class="code"></td></tr>
+<tr><td class="ln">120</td><td class="code">        <span <span class="kw">class</span>="cmt">// Remove the school association to effectively terminate the employment</span></td></tr>
+<tr><td class="ln">121</td><td class="code">        teacher.setSchool(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">122</td><td class="code">        teacherRepository.save(teacher);</td></tr>
+<tr><td class="ln">123</td><td class="code">    }</td></tr>
+<tr><td class="ln">124</td><td class="code"></td></tr>
+<tr><td class="ln">125</td><td class="code">    <span class="kw">public</span> TeacherDto updateSalary(Long teacherId, BigDecimal salary, UserDetails principal) {</td></tr>
+<tr><td class="ln">126</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update the salary <span class="kw">for</span> a specific teacher after verifying authority</span></td></tr>
+<tr><td class="ln">127</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed Teacher entity and validate the principal&#x27;s access rights</span></td></tr>
+<tr><td class="ln">128</td><td class="code">        Teacher teacher = resolveOwnTeacher(teacherId, principal);</td></tr>
+<tr><td class="ln">129</td><td class="code">        <span <span class="kw">class</span>="cmt">// Apply the <span class="kw">new</span> salary value to the entity</span></td></tr>
+<tr><td class="ln">130</td><td class="code">        teacher.setSalary(salary);</td></tr>
+<tr><td class="ln">131</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the changes to the database and <span class="kw">return</span> the updated DTO</span></td></tr>
+<tr><td class="ln">132</td><td class="code">        <span class="kw">return</span> toDto(teacherRepository.save(teacher));</td></tr>
+<tr><td class="ln">133</td><td class="code">    }</td></tr>
+<tr><td class="ln">134</td><td class="code"></td></tr>
+<tr><td class="ln">135</td><td class="code">    <span class="kw">public</span> TeacherDto updateQualifications(Long teacherId, List&lt;Long&gt; subjectIds, UserDetails principal) {</td></tr>
+<tr><td class="ln">136</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update the teacher&#x27;s subject qualifications and <span class="kw">return</span> the updated DTO</span></td></tr>
+<tr><td class="ln">137</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed Teacher entity and verify the principal has authority to modify it</span></td></tr>
+<tr><td class="ln">138</td><td class="code">        Teacher teacher = resolveOwnTeacher(teacherId, principal);</td></tr>
+<tr><td class="ln">139</td><td class="code">        <span <span class="kw">class</span>="cmt">// Fetch all subject entities matching the provided IDs</span></td></tr>
+<tr><td class="ln">140</td><td class="code">        Set&lt;Subject&gt; subjects = <span class="kw">new</span> HashSet&lt;&gt;(subjectRepository.findAllById(subjectIds));</td></tr>
+<tr><td class="ln">141</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update the teacher&#x27;s qualification set with the <span class="kw">new</span> subjects</span></td></tr>
+<tr><td class="ln">142</td><td class="code">        teacher.setQualifications(subjects);</td></tr>
+<tr><td class="ln">143</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist changes to the database and map the updated entity to a DTO</span></td></tr>
+<tr><td class="ln">144</td><td class="code">        <span class="kw">return</span> toDto(teacherRepository.save(teacher));</td></tr>
+<tr><td class="ln">145</td><td class="code">    }</td></tr>
+<tr><td class="ln">146</td><td class="code"></td></tr>
+<tr><td class="ln">147</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Helpers ────────────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">148</td><td class="code"></td></tr>
+<tr><td class="ln">149</td><td class="code">    <span class="kw">private</span> Teacher resolveOwnTeacher(Long teacherId, UserDetails principal) {</td></tr>
+<tr><td class="ln">150</td><td class="code">        <span <span class="kw">class</span>="cmt">// Validates that the requested teacher belongs to the headmaster&#x27;s school</span></td></tr>
+<tr><td class="ln">151</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the headmaster from the security context</span></td></tr>
+<tr><td class="ln">152</td><td class="code">        User headmaster = resolveUser(principal);</td></tr>
+<tr><td class="ln">153</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school managed by <span class="kw">this</span> headmaster</span></td></tr>
+<tr><td class="ln">154</td><td class="code">        School school = schoolService.resolveHeadmasterSchool(headmaster);</td></tr>
+<tr><td class="ln">155</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed Teacher entity or <span class="kw">throw</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> not found</span></td></tr>
+<tr><td class="ln">156</td><td class="code">        Teacher teacher = teacherRepository.findById(teacherId)</td></tr>
+<tr><td class="ln">157</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Teacher not found&quot;</span>));</td></tr>
+<tr><td class="ln">158</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check the teacher&#x27;s authority on <span class="kw">this</span> school by verifying school membership</span></td></tr>
+<tr><td class="ln">159</td><td class="code">        <span class="kw">if</span> (teacher.getSchool() == <span class="kw">null</span> || !teacher.getSchool().getId().equals(school.getId()))</td></tr>
+<tr><td class="ln">160</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.FORBIDDEN, <span <span class="kw">class</span>="str">&quot;Teacher does not belong to <span class="kw">this</span> school&quot;</span>);</td></tr>
+<tr><td class="ln">161</td><td class="code">        <span class="kw">return</span> teacher;</td></tr>
+<tr><td class="ln">162</td><td class="code">    }</td></tr>
+<tr><td class="ln">163</td><td class="code"></td></tr>
+<tr><td class="ln">164</td><td class="code">    <span class="kw">private</span> User resolveUser(UserDetails principal) {</td></tr>
+<tr><td class="ln">165</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed User entity from the database using the email from the authenticated principal</span></td></tr>
+<tr><td class="ln">166</td><td class="code">        <span class="kw">return</span> userRepository.findByEmail(principal.getUsername())</td></tr>
+<tr><td class="ln">167</td><td class="code">                <span <span class="kw">class</span>="cmt">// Throw an unauthorized exception <span class="kw">if</span> the user record cannot be found</span></td></tr>
+<tr><td class="ln">168</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED));</td></tr>
+<tr><td class="ln">169</td><td class="code">    }</td></tr>
+<tr><td class="ln">170</td><td class="code"></td></tr>
+<tr><td class="ln">171</td><td class="code">    <span class="kw">private</span> TeacherDto toDto(Teacher t) {</td></tr>
+<tr><td class="ln">172</td><td class="code">        <span <span class="kw">class</span>="cmt">// Maps the Teacher entity to a flattened DTO <span class="kw">for</span> API responses</span></td></tr>
+<tr><td class="ln">173</td><td class="code">        <span <span class="kw">class</span>="cmt">// Concatenate user profile names <span class="kw">for</span> a single display string</span></td></tr>
+<tr><td class="ln">174</td><td class="code">        String name  = t.getUser().getFirstName() + <span <span class="kw">class</span>="str">&quot; &quot;</span> + t.getUser().getLastName();</td></tr>
+<tr><td class="ln">175</td><td class="code">        <span <span class="kw">class</span>="cmt">// Extract the primary contact email from the associated User entity</span></td></tr>
+<tr><td class="ln">176</td><td class="code">        String email = t.getUser().getEmail();</td></tr>
+<tr><td class="ln">177</td><td class="code">        <span <span class="kw">class</span>="cmt">// Transform the set of subject qualifications into a sorted list of DTO items</span></td></tr>
+<tr><td class="ln">178</td><td class="code">        List&lt;TeacherDto.SubjectItem&gt; qualifications = t.getQualifications().stream()</td></tr>
+<tr><td class="ln">179</td><td class="code">                .map(s -&gt; <span class="kw">new</span> TeacherDto.SubjectItem(s.getId(), s.getName()))</td></tr>
+<tr><td class="ln">180</td><td class="code">                .sorted((a, b) -&gt; a.getName().compareToIgnoreCase(b.getName()))</td></tr>
+<tr><td class="ln">181</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">182</td><td class="code">        <span <span class="kw">class</span>="cmt">// Calculate the number of unique school classes <span class="kw">this</span> teacher is currently assigned to</span></td></tr>
+<tr><td class="ln">183</td><td class="code">        <span class="kw">int</span> classCount = (<span class="kw">int</span>) scheduleRepository.findAllByTeacher_Id(t.getId()).stream()</td></tr>
+<tr><td class="ln">184</td><td class="code">                .map(s -&gt; s.getSchoolClass().getId())</td></tr>
+<tr><td class="ln">185</td><td class="code">                .distinct()</td></tr>
+<tr><td class="ln">186</td><td class="code">                .count();</td></tr>
+<tr><td class="ln">187</td><td class="code">        <span <span class="kw">class</span>="cmt">// Construct the <span class="kw">final</span> DTO with all aggregated teacher information</span></td></tr>
+<tr><td class="ln">188</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> TeacherDto(t.getId(), name, email, t.getSalary(), qualifications, classCount);</td></tr>
+<tr><td class="ln">189</td><td class="code">    }</td></tr>
+<tr><td class="ln">190</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

@@ -101,7 +101,7 @@ function Schedule() {
   const [teacherSchedule, setTeacherSchedule] = useState([]);   // selected teacher's existing schedule
   const [form,            setForm]            = useState(EMPTY_FORM);
   const [saving,          setSaving]          = useState(false);
-
+  console.log(teachers);
   useEffect(() => {
     Promise.all([
       api.get(`/api/classes/${classId}`),

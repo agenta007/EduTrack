@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>AppRouter.jsx</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This file configures the client-side routing for the EduTrack application using React Router. It defines URL paths for all major user roles, including administrators, headmasters, teachers, parents, and students. Each route is wrapped in a ProtectedRoute component to enforce role-based access control before rendering the corresponding page component. The system also handles public access for login and unauthorized states, while redirecting unauthenticated users to the appropriate landing page. This centralizes navigation logic and ensures secure, role-specific content delivery throughout the school e-journal system.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">import</span> React <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span>;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> { Route, Routes } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-router-dom&#x27;</span>;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> ProtectedRoute <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;./ProtectedRoute&#x27;</span>;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> RoleRedirect <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;./RoleRedirect&#x27;</span>;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> Login <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Login/Login&#x27;</span>;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> Unauthorized <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Unauthorized/Unauthorized&#x27;</span>;</td></tr>
+<tr><td class="ln">8</td><td class="code"></td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> Profile <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Profile/Profile&#x27;</span>;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> AdminHome <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Admin/AdminHome&#x27;</span></td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> AdminManageUsers <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Admin/ManageUsers&#x27;</span>;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> ViewSchools <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Admin/ViewSchools&#x27;</span>;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> ViewSubjects <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Admin/ViewSubjects&#x27;</span>;</td></tr>
+<tr><td class="ln">14</td><td class="code"></td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> HeadmasterHome <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Headmaster/HeadmasterHome&#x27;</span>;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> HeadmasterSchool <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Headmaster/HeadmasterSchool&#x27;</span>;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> ViewParents <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Headmaster/ViewParents&#x27;</span>;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> ViewStudents <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Headmaster/ViewStudents&#x27;</span>;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> ViewTeachers <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Headmaster/ViewTeachers&#x27;</span>;</td></tr>
+<tr><td class="ln">20</td><td class="code"></td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> ParentHome <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Parent/ParentHome&#x27;</span>;</td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">import</span> StudentHome <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Student/StudentHome&#x27;</span>;</td></tr>
+<tr><td class="ln">23</td><td class="code"><span class="kw">import</span> StudentCalendar <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Student/StudentCalendar&#x27;</span>;</td></tr>
+<tr><td class="ln">24</td><td class="code"></td></tr>
+<tr><td class="ln">25</td><td class="code"><span class="kw">import</span> TeacherHome <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Teacher/TeacherHome&#x27;</span>;</td></tr>
+<tr><td class="ln">26</td><td class="code"><span class="kw">import</span> TeacherSchedule <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Teacher/TeacherSchedule&#x27;</span>;</td></tr>
+<tr><td class="ln">27</td><td class="code"><span class="kw">import</span> TeacherSchool <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Teacher/TeacherSchool&#x27;</span>;</td></tr>
+<tr><td class="ln">28</td><td class="code"></td></tr>
+<tr><td class="ln">29</td><td class="code"><span class="kw">import</span> Schedule <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Schedule/Schedule&#x27;</span>;</td></tr>
+<tr><td class="ln">30</td><td class="code"></td></tr>
+<tr><td class="ln">31</td><td class="code"><span class="kw">import</span> SchoolStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Statistics/SchoolStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">32</td><td class="code"><span class="kw">import</span> SubjectStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Statistics/SubjectStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">33</td><td class="code"><span class="kw">import</span> TeacherStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Statistics/TeacherStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">34</td><td class="code"></td></tr>
+<tr><td class="ln">35</td><td class="code"><span class="kw">import</span> StudentAbsences <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Absences/StudentAbsences&#x27;</span>;</td></tr>
+<tr><td class="ln">36</td><td class="code"><span class="kw">import</span> ClassAbsences <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Absences/ClassAbsences&#x27;</span>;</td></tr>
+<tr><td class="ln">37</td><td class="code"><span class="kw">import</span> SchoolAbsences <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Absences/SchoolAbsences&#x27;</span>;</td></tr>
+<tr><td class="ln">38</td><td class="code"><span class="kw">import</span> AllSchoolsAbsences <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Absences/AllSchoolsAbsences&#x27;</span>;</td></tr>
+<tr><td class="ln">39</td><td class="code"></td></tr>
+<tr><td class="ln">40</td><td class="code"><span class="kw">import</span> StudentGrades <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Grades/StudentGrades&#x27;</span>;</td></tr>
+<tr><td class="ln">41</td><td class="code"><span class="kw">import</span> ClassGrades <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Grades/ClassGrades&#x27;</span>;</td></tr>
+<tr><td class="ln">42</td><td class="code"><span class="kw">import</span> SchoolGrades <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Grades/SchoolGrades&#x27;</span>;</td></tr>
+<tr><td class="ln">43</td><td class="code"><span class="kw">import</span> AllSchoolsGrades <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Grades/AllSchoolsGrades&#x27;</span>;</td></tr>
+<tr><td class="ln">44</td><td class="code"></td></tr>
+<tr><td class="ln">45</td><td class="code"><span class="kw">import</span> SelectSchoolForStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectSchoolForStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">46</td><td class="code"><span class="kw">import</span> SelectTeacherForStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectTeacherForStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">47</td><td class="code"><span class="kw">import</span> SelectSubjectForStatistics <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectSubjectForStatistics&#x27;</span>;</td></tr>
+<tr><td class="ln">48</td><td class="code"><span class="kw">import</span> SelectClassForScheduleView <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectClassForScheduleView&#x27;</span>;</td></tr>
+<tr><td class="ln">49</td><td class="code"><span class="kw">import</span> SelectClassForGradesView <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectClassForGradesView&#x27;</span>;</td></tr>
+<tr><td class="ln">50</td><td class="code"><span class="kw">import</span> SelectClassForAbsencesView <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectClassForAbsenceView&#x27;</span>;</td></tr>
+<tr><td class="ln">51</td><td class="code"><span class="kw">import</span> SelectClassForComplaintsView <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Selection Pages/SelectClassForComplaintsView&#x27;</span>;</td></tr>
+<tr><td class="ln">52</td><td class="code"></td></tr>
+<tr><td class="ln">53</td><td class="code"><span class="kw">import</span> AllSchoolsComplaints <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Complaints/AllSchoolsCompaints&#x27;</span>;</td></tr>
+<tr><td class="ln">54</td><td class="code"><span class="kw">import</span> SchoolComplaints <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Complaints/SchoolComplaints&#x27;</span>;</td></tr>
+<tr><td class="ln">55</td><td class="code"><span class="kw">import</span> ClassComplaints <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Complaints/ClassComplaints&#x27;</span>;</td></tr>
+<tr><td class="ln">56</td><td class="code"><span class="kw">import</span> StudentComplaints <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../pages/Complaints/StudentComplaints&#x27;</span>;</td></tr>
+<tr><td class="ln">57</td><td class="code"></td></tr>
+<tr><td class="ln">58</td><td class="code"></td></tr>
+<tr><td class="ln">59</td><td class="code"><span class="kw">function</span> AppRouter() {</td></tr>
+<tr><td class="ln">60</td><td class="code">  <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">61</td><td class="code">    &lt;Routes&gt;</td></tr>
+<tr><td class="ln">62</td><td class="code">      {/* Default redirect to home based on role*/}</td></tr>
+<tr><td class="ln">63</td><td class="code">      &lt;Route path=<span <span class="kw">class</span>="str">&quot;/&quot;</span> element={&lt;RoleRedirect/&gt;}/&gt;</td></tr>
+<tr><td class="ln">64</td><td class="code"></td></tr>
+<tr><td class="ln">65</td><td class="code">      {/* Route to login page */}</td></tr>
+<tr><td class="ln">66</td><td class="code">      &lt;Route path=<span <span class="kw">class</span>="str">&quot;/login&quot;</span> element={&lt;Login/&gt;}/&gt;</td></tr>
+<tr><td class="ln">67</td><td class="code"></td></tr>
+<tr><td class="ln">68</td><td class="code">      {/* Route to unauthorized page */}</td></tr>
+<tr><td class="ln">69</td><td class="code">      &lt;Route path=<span <span class="kw">class</span>="str">&quot;/unauthorized&quot;</span> element={&lt;Unauthorized/&gt;} /&gt;</td></tr>
+<tr><td class="ln">70</td><td class="code"></td></tr>
+<tr><td class="ln">71</td><td class="code">      {/* Profile — all authenticated roles */}</td></tr>
+<tr><td class="ln">72</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">73</td><td class="code">        path=<span <span class="kw">class</span>="str">&quot;/profile&quot;</span></td></tr>
+<tr><td class="ln">74</td><td class="code">        element={</td></tr>
+<tr><td class="ln">75</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>,<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>,<span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>,<span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>,<span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">76</td><td class="code">            &lt;Profile /&gt;</td></tr>
+<tr><td class="ln">77</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">78</td><td class="code">        }</td></tr>
+<tr><td class="ln">79</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">80</td><td class="code"></td></tr>
+<tr><td class="ln">81</td><td class="code">      {/* Admin routes */}</td></tr>
+<tr><td class="ln">82</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">83</td><td class="code">        path=<span <span class="kw">class</span>="str">&quot;/admin&quot;</span></td></tr>
+<tr><td class="ln">84</td><td class="code">        element={</td></tr>
+<tr><td class="ln">85</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">86</td><td class="code">            &lt;AdminHome /&gt;</td></tr>
+<tr><td class="ln">87</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">88</td><td class="code">        }</td></tr>
+<tr><td class="ln">89</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">90</td><td class="code"></td></tr>
+<tr><td class="ln">91</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">92</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/admin/manageUsers&#x27;</span> </td></tr>
+<tr><td class="ln">93</td><td class="code">        element={</td></tr>
+<tr><td class="ln">94</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">95</td><td class="code">            &lt;AdminManageUsers/&gt;</td></tr>
+<tr><td class="ln">96</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">97</td><td class="code">        }</td></tr>
+<tr><td class="ln">98</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">99</td><td class="code"></td></tr>
+<tr><td class="ln">100</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">101</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/admin/viewSchools&#x27;</span> </td></tr>
+<tr><td class="ln">102</td><td class="code">        element={</td></tr>
+<tr><td class="ln">103</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">104</td><td class="code">            &lt;ViewSchools/&gt;</td></tr>
+<tr><td class="ln">105</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">106</td><td class="code">        }</td></tr>
+<tr><td class="ln">107</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">108</td><td class="code"></td></tr>
+<tr><td class="ln">109</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">110</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/admin/viewSubjects&#x27;</span></td></tr>
+<tr><td class="ln">111</td><td class="code">        element={</td></tr>
+<tr><td class="ln">112</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">113</td><td class="code">            &lt;ViewSubjects/&gt;</td></tr>
+<tr><td class="ln">114</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">115</td><td class="code">        }</td></tr>
+<tr><td class="ln">116</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">117</td><td class="code"></td></tr>
+<tr><td class="ln">118</td><td class="code">      {/* Headmaster routes */}</td></tr>
+<tr><td class="ln">119</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">120</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/headmaster&#x27;</span></td></tr>
+<tr><td class="ln">121</td><td class="code">        element={</td></tr>
+<tr><td class="ln">122</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">123</td><td class="code">            &lt;HeadmasterHome /&gt;</td></tr>
+<tr><td class="ln">124</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">125</td><td class="code">        }</td></tr>
+<tr><td class="ln">126</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">127</td><td class="code"></td></tr>
+<tr><td class="ln">128</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">129</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/headmaster/mySchool&#x27;</span></td></tr>
+<tr><td class="ln">130</td><td class="code">        element={</td></tr>
+<tr><td class="ln">131</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">132</td><td class="code">            &lt;HeadmasterSchool /&gt;</td></tr>
+<tr><td class="ln">133</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">134</td><td class="code">        }</td></tr>
+<tr><td class="ln">135</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">136</td><td class="code"></td></tr>
+<tr><td class="ln">137</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">138</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/headmaster/viewParents&#x27;</span></td></tr>
+<tr><td class="ln">139</td><td class="code">        element={</td></tr>
+<tr><td class="ln">140</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">141</td><td class="code">            &lt;ViewParents/&gt;</td></tr>
+<tr><td class="ln">142</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">143</td><td class="code">        }</td></tr>
+<tr><td class="ln">144</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">145</td><td class="code"></td></tr>
+<tr><td class="ln">146</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">147</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/headmaster/viewStudents&#x27;</span> </td></tr>
+<tr><td class="ln">148</td><td class="code">        element={</td></tr>
+<tr><td class="ln">149</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">150</td><td class="code">            &lt;ViewStudents/&gt;</td></tr>
+<tr><td class="ln">151</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">152</td><td class="code">        }</td></tr>
+<tr><td class="ln">153</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">154</td><td class="code"></td></tr>
+<tr><td class="ln">155</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">156</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/headmaster/viewTeachers&#x27;</span> </td></tr>
+<tr><td class="ln">157</td><td class="code">        element={</td></tr>
+<tr><td class="ln">158</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">159</td><td class="code">            &lt;ViewTeachers/&gt;</td></tr>
+<tr><td class="ln">160</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">161</td><td class="code">        }</td></tr>
+<tr><td class="ln">162</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">163</td><td class="code"></td></tr>
+<tr><td class="ln">164</td><td class="code">      {/* Parent routes */}</td></tr>
+<tr><td class="ln">165</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">166</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/parent&#x27;</span></td></tr>
+<tr><td class="ln">167</td><td class="code">        element={</td></tr>
+<tr><td class="ln">168</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">169</td><td class="code">            &lt;ParentHome /&gt;</td></tr>
+<tr><td class="ln">170</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">171</td><td class="code">        }</td></tr>
+<tr><td class="ln">172</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">173</td><td class="code"></td></tr>
+<tr><td class="ln">174</td><td class="code">      {/* Student routes */}</td></tr>
+<tr><td class="ln">175</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">176</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/student&#x27;</span></td></tr>
+<tr><td class="ln">177</td><td class="code">        element={</td></tr>
+<tr><td class="ln">178</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">179</td><td class="code">            &lt;StudentHome /&gt;</td></tr>
+<tr><td class="ln">180</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">181</td><td class="code">        }</td></tr>
+<tr><td class="ln">182</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">183</td><td class="code"></td></tr>
+<tr><td class="ln">184</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">185</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/student/calendar&#x27;</span></td></tr>
+<tr><td class="ln">186</td><td class="code">        element={</td></tr>
+<tr><td class="ln">187</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">188</td><td class="code">            &lt;StudentCalendar/&gt;</td></tr>
+<tr><td class="ln">189</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">190</td><td class="code">        }</td></tr>
+<tr><td class="ln">191</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">192</td><td class="code"></td></tr>
+<tr><td class="ln">193</td><td class="code">      {/* Teacher routes */}</td></tr>
+<tr><td class="ln">194</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">195</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/teacher&#x27;</span></td></tr>
+<tr><td class="ln">196</td><td class="code">        element={</td></tr>
+<tr><td class="ln">197</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">198</td><td class="code">            &lt;TeacherHome/&gt;</td></tr>
+<tr><td class="ln">199</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">200</td><td class="code">        }</td></tr>
+<tr><td class="ln">201</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">202</td><td class="code"></td></tr>
+<tr><td class="ln">203</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">204</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/teacher/school&#x27;</span></td></tr>
+<tr><td class="ln">205</td><td class="code">        element={</td></tr>
+<tr><td class="ln">206</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">207</td><td class="code">            &lt;TeacherSchool/&gt;</td></tr>
+<tr><td class="ln">208</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">209</td><td class="code">        }</td></tr>
+<tr><td class="ln">210</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">211</td><td class="code"></td></tr>
+<tr><td class="ln">212</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">213</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/teacher/teacherSchedule/:teacherId&#x27;</span></td></tr>
+<tr><td class="ln">214</td><td class="code">        element={</td></tr>
+<tr><td class="ln">215</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">216</td><td class="code">            &lt;TeacherSchedule/&gt;</td></tr>
+<tr><td class="ln">217</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">218</td><td class="code">        }</td></tr>
+<tr><td class="ln">219</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">220</td><td class="code"></td></tr>
+<tr><td class="ln">221</td><td class="code">      {/* Schedule route */}</td></tr>
+<tr><td class="ln">222</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">223</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/schedule/:classId&#x27;</span></td></tr>
+<tr><td class="ln">224</td><td class="code">        element={</td></tr>
+<tr><td class="ln">225</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>, <span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>, <span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">226</td><td class="code">            &lt;Schedule/&gt;</td></tr>
+<tr><td class="ln">227</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">228</td><td class="code">        }</td></tr>
+<tr><td class="ln">229</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">230</td><td class="code"></td></tr>
+<tr><td class="ln">231</td><td class="code">      {/* Statistics routes */}</td></tr>
+<tr><td class="ln">232</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">233</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/statistics/subject/:subjectId&#x27;</span></td></tr>
+<tr><td class="ln">234</td><td class="code">        element={</td></tr>
+<tr><td class="ln">235</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">236</td><td class="code">            &lt;SubjectStatistics/&gt;</td></tr>
+<tr><td class="ln">237</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">238</td><td class="code">        }</td></tr>
+<tr><td class="ln">239</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">240</td><td class="code"></td></tr>
+<tr><td class="ln">241</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">242</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/statistics/teacher/me&#x27;</span></td></tr>
+<tr><td class="ln">243</td><td class="code">        element={</td></tr>
+<tr><td class="ln">244</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">245</td><td class="code">            &lt;TeacherStatistics/&gt;</td></tr>
+<tr><td class="ln">246</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">247</td><td class="code">        }</td></tr>
+<tr><td class="ln">248</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">249</td><td class="code"></td></tr>
+<tr><td class="ln">250</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">251</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/statistics/teacher/:teacherId&#x27;</span></td></tr>
+<tr><td class="ln">252</td><td class="code">        element={</td></tr>
+<tr><td class="ln">253</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">254</td><td class="code">            &lt;TeacherStatistics/&gt;</td></tr>
+<tr><td class="ln">255</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">256</td><td class="code">        }</td></tr>
+<tr><td class="ln">257</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">258</td><td class="code"></td></tr>
+<tr><td class="ln">259</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">260</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/statistics/school/:schoolId&#x27;</span></td></tr>
+<tr><td class="ln">261</td><td class="code">        element={</td></tr>
+<tr><td class="ln">262</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">263</td><td class="code">            &lt;SchoolStatistics/&gt;</td></tr>
+<tr><td class="ln">264</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">265</td><td class="code">        }</td></tr>
+<tr><td class="ln">266</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">267</td><td class="code"></td></tr>
+<tr><td class="ln">268</td><td class="code">      {/* Absences routes */}</td></tr>
+<tr><td class="ln">269</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">270</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/absences&#x27;</span></td></tr>
+<tr><td class="ln">271</td><td class="code">        element={</td></tr>
+<tr><td class="ln">272</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">273</td><td class="code">            &lt;AllSchoolsAbsences/&gt;</td></tr>
+<tr><td class="ln">274</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">275</td><td class="code">        }</td></tr>
+<tr><td class="ln">276</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">277</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">278</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/absences/school/:schoolId&#x27;</span></td></tr>
+<tr><td class="ln">279</td><td class="code">        element={</td></tr>
+<tr><td class="ln">280</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">281</td><td class="code">            &lt;SchoolAbsences/&gt;</td></tr>
+<tr><td class="ln">282</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">283</td><td class="code">        }</td></tr>
+<tr><td class="ln">284</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">285</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">286</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/absences/<span class="kw">class</span>/:classId&#x27;</span></td></tr>
+<tr><td class="ln">287</td><td class="code">        element={</td></tr>
+<tr><td class="ln">288</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">289</td><td class="code">            &lt;ClassAbsences/&gt;</td></tr>
+<tr><td class="ln">290</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">291</td><td class="code">        }</td></tr>
+<tr><td class="ln">292</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">293</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">294</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/absences/student/:studentId&#x27;</span></td></tr>
+<tr><td class="ln">295</td><td class="code">        element={</td></tr>
+<tr><td class="ln">296</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>, <span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>, <span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">297</td><td class="code">            &lt;StudentAbsences/&gt;</td></tr>
+<tr><td class="ln">298</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">299</td><td class="code">        }</td></tr>
+<tr><td class="ln">300</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">301</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">302</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/absences/me&#x27;</span></td></tr>
+<tr><td class="ln">303</td><td class="code">        element={</td></tr>
+<tr><td class="ln">304</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">305</td><td class="code">            &lt;StudentAbsences/&gt;</td></tr>
+<tr><td class="ln">306</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">307</td><td class="code">        }</td></tr>
+<tr><td class="ln">308</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">309</td><td class="code"></td></tr>
+<tr><td class="ln">310</td><td class="code">      {/* Complaints route */}</td></tr>
+<tr><td class="ln">311</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">312</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/complaints&#x27;</span></td></tr>
+<tr><td class="ln">313</td><td class="code">        element={</td></tr>
+<tr><td class="ln">314</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">315</td><td class="code">            &lt;AllSchoolsComplaints /&gt;</td></tr>
+<tr><td class="ln">316</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">317</td><td class="code">        }</td></tr>
+<tr><td class="ln">318</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">319</td><td class="code">      </td></tr>
+<tr><td class="ln">320</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">321</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/complaints/school/:schoolId&#x27;</span></td></tr>
+<tr><td class="ln">322</td><td class="code">        element={</td></tr>
+<tr><td class="ln">323</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">324</td><td class="code">            &lt;SchoolComplaints /&gt;</td></tr>
+<tr><td class="ln">325</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">326</td><td class="code">        }</td></tr>
+<tr><td class="ln">327</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">328</td><td class="code"></td></tr>
+<tr><td class="ln">329</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">330</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/complaints/<span class="kw">class</span>/:classId&#x27;</span></td></tr>
+<tr><td class="ln">331</td><td class="code">        element={</td></tr>
+<tr><td class="ln">332</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">333</td><td class="code">            &lt;ClassComplaints /&gt;</td></tr>
+<tr><td class="ln">334</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">335</td><td class="code">        }</td></tr>
+<tr><td class="ln">336</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">337</td><td class="code"></td></tr>
+<tr><td class="ln">338</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">339</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/complaints/student/:studentId&#x27;</span></td></tr>
+<tr><td class="ln">340</td><td class="code">        element={</td></tr>
+<tr><td class="ln">341</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>, <span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>, <span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">342</td><td class="code">            &lt;StudentComplaints /&gt;</td></tr>
+<tr><td class="ln">343</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">344</td><td class="code">        }</td></tr>
+<tr><td class="ln">345</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">346</td><td class="code"></td></tr>
+<tr><td class="ln">347</td><td class="code">      {/* Grades routes */}</td></tr>
+<tr><td class="ln">348</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">349</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/grades&#x27;</span></td></tr>
+<tr><td class="ln">350</td><td class="code">        element={</td></tr>
+<tr><td class="ln">351</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">352</td><td class="code">            &lt;AllSchoolsGrades/&gt;</td></tr>
+<tr><td class="ln">353</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">354</td><td class="code">        }</td></tr>
+<tr><td class="ln">355</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">356</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">357</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/grades/school/:schoolId&#x27;</span></td></tr>
+<tr><td class="ln">358</td><td class="code">        element={</td></tr>
+<tr><td class="ln">359</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">360</td><td class="code">            &lt;SchoolGrades/&gt;</td></tr>
+<tr><td class="ln">361</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">362</td><td class="code">        }</td></tr>
+<tr><td class="ln">363</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">364</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">365</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/grades/<span class="kw">class</span>/:classId&#x27;</span></td></tr>
+<tr><td class="ln">366</td><td class="code">        element={</td></tr>
+<tr><td class="ln">367</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">368</td><td class="code">            &lt;ClassGrades/&gt;</td></tr>
+<tr><td class="ln">369</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">370</td><td class="code">        }</td></tr>
+<tr><td class="ln">371</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">372</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">373</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/grades/student/:studentId&#x27;</span></td></tr>
+<tr><td class="ln">374</td><td class="code">        element={</td></tr>
+<tr><td class="ln">375</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>, <span <span class="kw">class</span>="str">&quot;PARENT&quot;</span>, <span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">376</td><td class="code">            &lt;StudentGrades/&gt;</td></tr>
+<tr><td class="ln">377</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">378</td><td class="code">        }</td></tr>
+<tr><td class="ln">379</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">380</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">381</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/grades/me&#x27;</span></td></tr>
+<tr><td class="ln">382</td><td class="code">        element={</td></tr>
+<tr><td class="ln">383</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;STUDENT&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">384</td><td class="code">            &lt;StudentGrades/&gt;</td></tr>
+<tr><td class="ln">385</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">386</td><td class="code">        }</td></tr>
+<tr><td class="ln">387</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">388</td><td class="code"></td></tr>
+<tr><td class="ln">389</td><td class="code">      {/* Selection pages routes */}</td></tr>
+<tr><td class="ln">390</td><td class="code">      {/* ony <span class="kw">for</span> admin, bc headmaster can&#x27;t choose school, it will be automatically displayed */}</td></tr>
+<tr><td class="ln">391</td><td class="code">      &lt;Route </td></tr>
+<tr><td class="ln">392</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/school/statistics&#x27;</span></td></tr>
+<tr><td class="ln">393</td><td class="code">        element={</td></tr>
+<tr><td class="ln">394</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">395</td><td class="code">            &lt;SelectSchoolForStatistics /&gt;</td></tr>
+<tr><td class="ln">396</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">397</td><td class="code">        }</td></tr>
+<tr><td class="ln">398</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">399</td><td class="code">      {/* admin can choose teacher <span class="kw">in</span> particular school - <span <span class="kw">class</span>="num">2</span> fields, headmaster can choose only <span class="kw">from</span> teachers <span class="kw">in</span> their school */}</td></tr>
+<tr><td class="ln">400</td><td class="code">      &lt;Route </td></tr>
+<tr><td class="ln">401</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/teacher/statistics&#x27;</span></td></tr>
+<tr><td class="ln">402</td><td class="code">        element={</td></tr>
+<tr><td class="ln">403</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">404</td><td class="code">            &lt;SelectTeacherForStatistics /&gt;</td></tr>
+<tr><td class="ln">405</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">406</td><td class="code">        }</td></tr>
+<tr><td class="ln">407</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">408</td><td class="code"></td></tr>
+<tr><td class="ln">409</td><td class="code">      &lt;Route </td></tr>
+<tr><td class="ln">410</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/subject/statistics&#x27;</span></td></tr>
+<tr><td class="ln">411</td><td class="code">        element={</td></tr>
+<tr><td class="ln">412</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">413</td><td class="code">            &lt;SelectSubjectForStatistics /&gt;</td></tr>
+<tr><td class="ln">414</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">415</td><td class="code">        }</td></tr>
+<tr><td class="ln">416</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">417</td><td class="code"></td></tr>
+<tr><td class="ln">418</td><td class="code">        {/* same as teacher statistics */}</td></tr>
+<tr><td class="ln">419</td><td class="code">      &lt;Route </td></tr>
+<tr><td class="ln">420</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/schedule&#x27;</span></td></tr>
+<tr><td class="ln">421</td><td class="code">        element={</td></tr>
+<tr><td class="ln">422</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">423</td><td class="code">            &lt;SelectClassForScheduleView /&gt;</td></tr>
+<tr><td class="ln">424</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">425</td><td class="code">        }</td></tr>
+<tr><td class="ln">426</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">427</td><td class="code"></td></tr>
+<tr><td class="ln">428</td><td class="code">      {/* The admin sees table <span class="kw">with</span> all schools, the headmaster - table <span class="kw">with</span> all classes <span class="kw">in</span> their school, parent/student only <span class="kw">for</span> one student, teacher is the only one who needs to select the <span class="kw">class</span> to then get to the table <span class="kw">with</span> students <span class="kw">in</span> it. Same <span class="kw">for</span> grades, absences and complaints */}</td></tr>
+<tr><td class="ln">429</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">430</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/grades&#x27;</span></td></tr>
+<tr><td class="ln">431</td><td class="code">        element={</td></tr>
+<tr><td class="ln">432</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">433</td><td class="code">            &lt;SelectClassForGradesView /&gt;</td></tr>
+<tr><td class="ln">434</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">435</td><td class="code">        }</td></tr>
+<tr><td class="ln">436</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">437</td><td class="code"></td></tr>
+<tr><td class="ln">438</td><td class="code">      &lt;Route</td></tr>
+<tr><td class="ln">439</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/absences&#x27;</span></td></tr>
+<tr><td class="ln">440</td><td class="code">        element={</td></tr>
+<tr><td class="ln">441</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;HEADMASTER&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">442</td><td class="code">            &lt;SelectClassForAbsencesView /&gt;</td></tr>
+<tr><td class="ln">443</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">444</td><td class="code">        }</td></tr>
+<tr><td class="ln">445</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">446</td><td class="code"></td></tr>
+<tr><td class="ln">447</td><td class="code">      &lt;Route </td></tr>
+<tr><td class="ln">448</td><td class="code">        path=<span <span class="kw">class</span>="str">&#x27;/select/<span class="kw">class</span>/complaints&#x27;</span></td></tr>
+<tr><td class="ln">449</td><td class="code">        element={</td></tr>
+<tr><td class="ln">450</td><td class="code">          &lt;ProtectedRoute roles={[<span <span class="kw">class</span>="str">&quot;ADMIN&quot;</span>, <span <span class="kw">class</span>="str">&quot;TEACHER&quot;</span>]}&gt;</td></tr>
+<tr><td class="ln">451</td><td class="code">            &lt;SelectClassForComplaintsView /&gt;</td></tr>
+<tr><td class="ln">452</td><td class="code">          &lt;/ProtectedRoute&gt;</td></tr>
+<tr><td class="ln">453</td><td class="code">        }</td></tr>
+<tr><td class="ln">454</td><td class="code">      /&gt;</td></tr>
+<tr><td class="ln">455</td><td class="code"></td></tr>
+<tr><td class="ln">456</td><td class="code">    &lt;/Routes&gt;</td></tr>
+<tr><td class="ln">457</td><td class="code">  )</td></tr>
+<tr><td class="ln">458</td><td class="code">}</td></tr>
+<tr><td class="ln">459</td><td class="code"></td></tr>
+<tr><td class="ln">460</td><td class="code"><span class="kw">export</span> <span class="kw">default</span> AppRouter</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

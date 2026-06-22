@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>AuthController.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This controller handles user authentication flows for the EduTrack system by exposing endpoints for login, token refresh, and logout. It validates credentials through Spring Security and generates short-lived access tokens along with long-lived refresh tokens stored in HttpOnly cookies. The login endpoint authenticates users and returns an access token while setting a secure refresh cookie for future use. The refresh endpoint allows clients to obtain new access tokens without re-entering credentials by validating the existing refresh cookie. The logout endpoint clears the refresh cookie to terminate the session securely. This design ensures secure stateless authentication while maintaining user sessions via cookie-based token management.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.controller;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.AuthResponse;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.LoginRequest;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.User;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.UserRepository;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.security.JwtUtils;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.Operation;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponse;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponses;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.tags.Tag;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> jakarta.servlet.http.Cookie;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> jakarta.servlet.http.HttpServletRequest;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> jakarta.servlet.http.HttpServletResponse;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> jakarta.validation.Valid;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> org.springframework.http.ResponseEntity;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> org.springframework.security.authentication.AuthenticationManager;</td></tr>
+<tr><td class="ln">20</td><td class="code"><span class="kw">import</span> org.springframework.security.authentication.UsernamePasswordAuthenticationToken;</td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> org.springframework.security.core.AuthenticationException;</td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">import</span> org.springframework.web.bind.annotation.*;</td></tr>
+<tr><td class="ln">23</td><td class="code"><span class="kw">import</span> org.springframework.web.server.ResponseStatusException;</td></tr>
+<tr><td class="ln">24</td><td class="code"></td></tr>
+<tr><td class="ln">25</td><td class="code"><span class="kw">import</span> java.util.Map;</td></tr>
+<tr><td class="ln">26</td><td class="code"><span class="kw">import</span> java.util.Arrays;</td></tr>
+<tr><td class="ln">27</td><td class="code"><span class="kw">import</span> java.util.Optional;</td></tr>
+<tr><td class="ln">28</td><td class="code"></td></tr>
+<tr><td class="ln">29</td><td class="code"><span <span class="kw">class</span>="ann">@RestController</span></td></tr>
+<tr><td class="ln">30</td><td class="code"><span <span class="kw">class</span>="ann">@RequestMapping</span>(<span <span class="kw">class</span>="str">&quot;/auth&quot;</span>)</td></tr>
+<tr><td class="ln">31</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">32</td><td class="code"><span <span class="kw">class</span>="ann">@Tag</span>(name = <span <span class="kw">class</span>="str">&quot;Authentication&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Login, token refresh, and logout&quot;</span>)</td></tr>
+<tr><td class="ln">33</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> AuthController {</td></tr>
+<tr><td class="ln">34</td><td class="code"></td></tr>
+<tr><td class="ln">35</td><td class="code">    <span class="kw">private</span> <span class="kw">static</span> <span class="kw">final</span> String REFRESH_COOKIE = <span <span class="kw">class</span>="str">&quot;refreshToken&quot;</span>;</td></tr>
+<tr><td class="ln">36</td><td class="code">    <span class="kw">private</span> <span class="kw">static</span> <span class="kw">final</span> <span class="kw">int</span>   REFRESH_MAX_AGE  = <span <span class="kw">class</span>="num">7</span> * <span <span class="kw">class</span>="num">24</span> * <span <span class="kw">class</span>="num">60</span> * <span <span class="kw">class</span>="num">60</span>; <span <span class="kw">class</span>="cmt">// <span <span class="kw">class</span>="num">7</span> days in seconds</span></td></tr>
+<tr><td class="ln">37</td><td class="code"></td></tr>
+<tr><td class="ln">38</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> AuthenticationManager authenticationManager;</td></tr>
+<tr><td class="ln">39</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> UserRepository        userRepository;</td></tr>
+<tr><td class="ln">40</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> JwtUtils              jwtUtils;</td></tr>
+<tr><td class="ln">41</td><td class="code"></td></tr>
+<tr><td class="ln">42</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Log in&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Authenticate with email and password. Returns a <span class="kw">short</span>-lived access token in the body and sets a <span <span class="kw">class</span>="num">7</span>-day HttpOnly refresh cookie.&quot;</span>)</td></tr>
+<tr><td class="ln">43</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">44</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Authenticated — access token returned&quot;</span>),</td></tr>
+<tr><td class="ln">45</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">401</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Invalid email or password&quot;</span>)</td></tr>
+<tr><td class="ln">46</td><td class="code">    })</td></tr>
+<tr><td class="ln">47</td><td class="code">    <span <span class="kw">class</span>="ann">@PostMapping</span>(<span <span class="kw">class</span>="str">&quot;/login&quot;</span>)</td></tr>
+<tr><td class="ln">48</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;?&gt; login(<span <span class="kw">class</span>="ann">@Valid</span> <span <span class="kw">class</span>="ann">@RequestBody</span> LoginRequest request,</td></tr>
+<tr><td class="ln">49</td><td class="code">                                   HttpServletResponse response) {</td></tr>
+<tr><td class="ln">50</td><td class="code">        <span <span class="kw">class</span>="cmt">// Authenticate the user credentials via the Spring Security AuthenticationManager</span></td></tr>
+<tr><td class="ln">51</td><td class="code">        <span class="kw">try</span> {</td></tr>
+<tr><td class="ln">52</td><td class="code">            authenticationManager.authenticate(</td></tr>
+<tr><td class="ln">53</td><td class="code">                    <span class="kw">new</span> UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())</td></tr>
+<tr><td class="ln">54</td><td class="code">            );</td></tr>
+<tr><td class="ln">55</td><td class="code">        } <span class="kw">catch</span> (AuthenticationException e) {</td></tr>
+<tr><td class="ln">56</td><td class="code">            <span <span class="kw">class</span>="cmt">// Return <span <span class="kw">class</span>="num">401</span> Unauthorized <span class="kw">if</span> the credentials <span class="kw">do</span> not match</span></td></tr>
+<tr><td class="ln">57</td><td class="code">            <span class="kw">return</span> ResponseEntity.status(HttpStatus.UNAUTHORIZED)</td></tr>
+<tr><td class="ln">58</td><td class="code">                    .body(Map.of(<span <span class="kw">class</span>="str">&quot;message&quot;</span>, <span <span class="kw">class</span>="str">&quot;Invalid email or password&quot;</span>));</td></tr>
+<tr><td class="ln">59</td><td class="code">        }</td></tr>
+<tr><td class="ln">60</td><td class="code"></td></tr>
+<tr><td class="ln">61</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed User entity from the database using the provided email</span></td></tr>
+<tr><td class="ln">62</td><td class="code">        User user = userRepository.findByEmail(request.getEmail()).orElseThrow();</td></tr>
+<tr><td class="ln">63</td><td class="code"></td></tr>
+<tr><td class="ln">64</td><td class="code">        <span <span class="kw">class</span>="cmt">// Generate the JWT pair <span class="kw">for</span> the authenticated user</span></td></tr>
+<tr><td class="ln">65</td><td class="code">        String accessToken  = jwtUtils.generateAccessToken(user);</td></tr>
+<tr><td class="ln">66</td><td class="code">        String refreshToken = jwtUtils.generateRefreshToken(user);</td></tr>
+<tr><td class="ln">67</td><td class="code"></td></tr>
+<tr><td class="ln">68</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the refresh token in a secure, HttpOnly cookie on the client</span></td></tr>
+<tr><td class="ln">69</td><td class="code">        addRefreshCookie(response, refreshToken);</td></tr>
+<tr><td class="ln">70</td><td class="code"></td></tr>
+<tr><td class="ln">71</td><td class="code">        <span <span class="kw">class</span>="cmt">// Return the <span class="kw">short</span>-lived access token in the response body</span></td></tr>
+<tr><td class="ln">72</td><td class="code">        <span class="kw">return</span> ResponseEntity.ok(<span class="kw">new</span> AuthResponse(accessToken));</td></tr>
+<tr><td class="ln">73</td><td class="code">    }</td></tr>
+<tr><td class="ln">74</td><td class="code"></td></tr>
+<tr><td class="ln">75</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Refresh access token&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Uses the HttpOnly refresh cookie to issue a <span class="kw">new</span> access token. No request body needed.&quot;</span>)</td></tr>
+<tr><td class="ln">76</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">77</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;New access token returned&quot;</span>),</td></tr>
+<tr><td class="ln">78</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">401</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Refresh token missing or expired&quot;</span>)</td></tr>
+<tr><td class="ln">79</td><td class="code">    })</td></tr>
+<tr><td class="ln">80</td><td class="code">    <span <span class="kw">class</span>="ann">@PostMapping</span>(<span <span class="kw">class</span>="str">&quot;/refresh&quot;</span>)</td></tr>
+<tr><td class="ln">81</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;AuthResponse&gt; refresh(HttpServletRequest request) {</td></tr>
+<tr><td class="ln">82</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the refresh token from the HttpOnly cookie or reject the request</span></td></tr>
+<tr><td class="ln">83</td><td class="code">        String refreshToken = extractRefreshCookie(request)</td></tr>
+<tr><td class="ln">84</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED, <span <span class="kw">class</span>="str">&quot;Refresh token missing&quot;</span>));</td></tr>
+<tr><td class="ln">85</td><td class="code"></td></tr>
+<tr><td class="ln">86</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the token&#x27;s signature and expiration status</span></td></tr>
+<tr><td class="ln">87</td><td class="code">        <span class="kw">if</span> (!jwtUtils.validateToken(refreshToken)) {</td></tr>
+<tr><td class="ln">88</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED, <span <span class="kw">class</span>="str">&quot;Invalid or expired refresh token&quot;</span>);</td></tr>
+<tr><td class="ln">89</td><td class="code">        }</td></tr>
+<tr><td class="ln">90</td><td class="code"></td></tr>
+<tr><td class="ln">91</td><td class="code">        <span <span class="kw">class</span>="cmt">// Extract the subject and load the managed User entity from the database</span></td></tr>
+<tr><td class="ln">92</td><td class="code">        String email = jwtUtils.getEmailFromToken(refreshToken);</td></tr>
+<tr><td class="ln">93</td><td class="code">        User user = userRepository.findByEmail(email)</td></tr>
+<tr><td class="ln">94</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED, <span <span class="kw">class</span>="str">&quot;User not found&quot;</span>));</td></tr>
+<tr><td class="ln">95</td><td class="code"></td></tr>
+<tr><td class="ln">96</td><td class="code">        <span <span class="kw">class</span>="cmt">// Issue a <span class="kw">new</span> <span class="kw">short</span>-lived access token <span class="kw">for</span> the authenticated user</span></td></tr>
+<tr><td class="ln">97</td><td class="code">        <span class="kw">return</span> ResponseEntity.ok(<span class="kw">new</span> AuthResponse(jwtUtils.generateAccessToken(user)));</td></tr>
+<tr><td class="ln">98</td><td class="code">    }</td></tr>
+<tr><td class="ln">99</td><td class="code"></td></tr>
+<tr><td class="ln">100</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Log out&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Clears the refresh cookie. The access token expires naturally (<span <span class="kw">class</span>="num">24</span> h).&quot;</span>)</td></tr>
+<tr><td class="ln">101</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Logged out&quot;</span>)</td></tr>
+<tr><td class="ln">102</td><td class="code">    <span <span class="kw">class</span>="ann">@PostMapping</span>(<span <span class="kw">class</span>="str">&quot;/logout&quot;</span>)</td></tr>
+<tr><td class="ln">103</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;Void&gt; logout(HttpServletResponse response) {</td></tr>
+<tr><td class="ln">104</td><td class="code">        <span <span class="kw">class</span>="cmt">// Invalidate the user session by removing the HttpOnly refresh token cookie</span></td></tr>
+<tr><td class="ln">105</td><td class="code">        clearRefreshCookie(response);</td></tr>
+<tr><td class="ln">106</td><td class="code">        <span <span class="kw">class</span>="cmt">// Return a <span <span class="kw">class</span>="num">200</span> OK response to confirm logout success</span></td></tr>
+<tr><td class="ln">107</td><td class="code">        <span class="kw">return</span> ResponseEntity.ok().build();</td></tr>
+<tr><td class="ln">108</td><td class="code">    }</td></tr>
+<tr><td class="ln">109</td><td class="code"></td></tr>
+<tr><td class="ln">110</td><td class="code">    <span <span class="kw">class</span>="cmt">// -------------------------------------------------------------------------</span></td></tr>
+<tr><td class="ln">111</td><td class="code"></td></tr>
+<tr><td class="ln">112</td><td class="code">    <span class="kw">private</span> <span class="kw">void</span> addRefreshCookie(HttpServletResponse response, String value) {</td></tr>
+<tr><td class="ln">113</td><td class="code">        <span <span class="kw">class</span>="cmt">// Configure and attach the HttpOnly refresh token cookie to the HTTP response</span></td></tr>
+<tr><td class="ln">114</td><td class="code">        <span <span class="kw">class</span>="cmt">// Initialize the cookie with the predefined REFRESH_COOKIE name and the JWT value</span></td></tr>
+<tr><td class="ln">115</td><td class="code">        Cookie cookie = <span class="kw">new</span> Cookie(REFRESH_COOKIE, value);</td></tr>
+<tr><td class="ln">116</td><td class="code">        <span <span class="kw">class</span>="cmt">// Prevent client-side scripts from accessing the cookie to mitigate XSS attacks</span></td></tr>
+<tr><td class="ln">117</td><td class="code">        cookie.setHttpOnly(<span class="kw">true</span>);</td></tr>
+<tr><td class="ln">118</td><td class="code">        <span <span class="kw">class</span>="cmt">// Disable secure flag <span class="kw">for</span> local development; must be <span class="kw">true</span> in production environments using HTTPS</span></td></tr>
+<tr><td class="ln">119</td><td class="code">        cookie.setSecure(<span class="kw">false</span>);   <span <span class="kw">class</span>="cmt">// set <span class="kw">true</span> in production (HTTPS)</span></td></tr>
+<tr><td class="ln">120</td><td class="code">        <span <span class="kw">class</span>="cmt">// Restrict the cookie scope to the /auth endpoint to limit exposure</span></td></tr>
+<tr><td class="ln">121</td><td class="code">        cookie.setPath(<span <span class="kw">class</span>="str">&quot;/auth&quot;</span>);</td></tr>
+<tr><td class="ln">122</td><td class="code">        <span <span class="kw">class</span>="cmt">// Set the cookie expiration based on the application&#x27;s refresh token lifetime</span></td></tr>
+<tr><td class="ln">123</td><td class="code">        cookie.setMaxAge(REFRESH_MAX_AGE);</td></tr>
+<tr><td class="ln">124</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the cookie in the user&#x27;s browser via the response header</span></td></tr>
+<tr><td class="ln">125</td><td class="code">        response.addCookie(cookie);</td></tr>
+<tr><td class="ln">126</td><td class="code">    }</td></tr>
+<tr><td class="ln">127</td><td class="code"></td></tr>
+<tr><td class="ln">128</td><td class="code">    <span class="kw">private</span> <span class="kw">void</span> clearRefreshCookie(HttpServletResponse response) {</td></tr>
+<tr><td class="ln">129</td><td class="code">        <span <span class="kw">class</span>="cmt">// Invalidates the refresh token by overwriting the existing cookie with an empty value</span></td></tr>
+<tr><td class="ln">130</td><td class="code">        Cookie cookie = <span class="kw">new</span> Cookie(REFRESH_COOKIE, <span <span class="kw">class</span>="str">&quot;&quot;</span>);</td></tr>
+<tr><td class="ln">131</td><td class="code">        <span <span class="kw">class</span>="cmt">// Prevent client-side script access to the cookie <span class="kw">for</span> security</span></td></tr>
+<tr><td class="ln">132</td><td class="code">        cookie.setHttpOnly(<span class="kw">true</span>);</td></tr>
+<tr><td class="ln">133</td><td class="code">        <span <span class="kw">class</span>="cmt">// Ensure the cookie is cleared <span class="kw">for</span> the specific authentication endpoint path</span></td></tr>
+<tr><td class="ln">134</td><td class="code">        cookie.setPath(<span <span class="kw">class</span>="str">&quot;/auth&quot;</span>);</td></tr>
+<tr><td class="ln">135</td><td class="code">        <span <span class="kw">class</span>="cmt">// Set expiration to zero to trigger immediate deletion by the browser</span></td></tr>
+<tr><td class="ln">136</td><td class="code">        cookie.setMaxAge(<span <span class="kw">class</span>="num">0</span>);</td></tr>
+<tr><td class="ln">137</td><td class="code">        <span <span class="kw">class</span>="cmt">// Commit the invalidated cookie to the HTTP response</span></td></tr>
+<tr><td class="ln">138</td><td class="code">        response.addCookie(cookie);</td></tr>
+<tr><td class="ln">139</td><td class="code">    }</td></tr>
+<tr><td class="ln">140</td><td class="code"></td></tr>
+<tr><td class="ln">141</td><td class="code">    <span class="kw">private</span> Optional&lt;String&gt; extractRefreshCookie(HttpServletRequest request) {</td></tr>
+<tr><td class="ln">142</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the refresh token from the HttpOnly cookie in the incoming request</span></td></tr>
+<tr><td class="ln">143</td><td class="code">        <span class="kw">if</span> (request.getCookies() == <span class="kw">null</span>) <span class="kw">return</span> Optional.empty();</td></tr>
+<tr><td class="ln">144</td><td class="code">        <span class="kw">return</span> Arrays.stream(request.getCookies())</td></tr>
+<tr><td class="ln">145</td><td class="code">                <span <span class="kw">class</span>="cmt">// Filter the cookie array <span class="kw">for</span> the specific REFRESH_COOKIE name</span></td></tr>
+<tr><td class="ln">146</td><td class="code">                .filter(c -&gt; REFRESH_COOKIE.equals(c.getName()))</td></tr>
+<tr><td class="ln">147</td><td class="code">                <span <span class="kw">class</span>="cmt">// Extract the token value from the matched cookie</span></td></tr>
+<tr><td class="ln">148</td><td class="code">                .map(Cookie::getValue)</td></tr>
+<tr><td class="ln">149</td><td class="code">                <span <span class="kw">class</span>="cmt">// Return the first match found, wrapped in an Optional</span></td></tr>
+<tr><td class="ln">150</td><td class="code">                .findFirst();</td></tr>
+<tr><td class="ln">151</td><td class="code">    }</td></tr>
+<tr><td class="ln">152</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

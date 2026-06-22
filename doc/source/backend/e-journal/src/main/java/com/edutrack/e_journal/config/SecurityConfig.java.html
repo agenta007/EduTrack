@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SecurityConfig.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This configuration class establishes the security framework for the EduTrack school e-journal system by integrating Spring Security with JWT-based authentication. It defines a stateless session policy and disables CSRF protection to support a modern API architecture. The setup exposes essential beans for password encoding and authentication management while configuring a custom filter chain that validates requests via a JWT filter and a local admin filter. Public endpoints for authentication and Swagger documentation are explicitly permitted, whereas all other requests require authentication. Additionally, it configures CORS to allow cross-origin requests from the frontend development server.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.config;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.security.JwtAuthenticationFilter;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.security.LocalhostAdminFilter;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> org.springframework.beans.factory.annotation.Value;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> org.springframework.context.annotation.Bean;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> org.springframework.context.annotation.Configuration;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> org.springframework.security.authentication.AuthenticationManager;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> org.springframework.security.config.annotation.web.builders.HttpSecurity;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> org.springframework.security.config.http.SessionCreationPolicy;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> org.springframework.security.crypto.password.PasswordEncoder;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> org.springframework.security.web.SecurityFilterChain;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;</td></tr>
+<tr><td class="ln">20</td><td class="code"><span class="kw">import</span> org.springframework.web.cors.CorsConfiguration;</td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> org.springframework.web.cors.CorsConfigurationSource;</td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">import</span> org.springframework.web.cors.UrlBasedCorsConfigurationSource;</td></tr>
+<tr><td class="ln">23</td><td class="code"></td></tr>
+<tr><td class="ln">24</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">25</td><td class="code"></td></tr>
+<tr><td class="ln">26</td><td class="code"><span <span class="kw">class</span>="ann">@Configuration</span></td></tr>
+<tr><td class="ln">27</td><td class="code"><span <span class="kw">class</span>="ann">@EnableWebSecurity</span></td></tr>
+<tr><td class="ln">28</td><td class="code"><span <span class="kw">class</span>="ann">@EnableMethodSecurity</span></td></tr>
+<tr><td class="ln">29</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">30</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> SecurityConfig {</td></tr>
+<tr><td class="ln">31</td><td class="code"></td></tr>
+<tr><td class="ln">32</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> JwtAuthenticationFilter jwtAuthenticationFilter;</td></tr>
+<tr><td class="ln">33</td><td class="code"></td></tr>
+<tr><td class="ln">34</td><td class="code">    <span <span class="kw">class</span>="ann">@Value</span>(<span <span class="kw">class</span>="str">&quot;${app.security.allow-localhost:<span class="kw">true</span>}&quot;</span>)</td></tr>
+<tr><td class="ln">35</td><td class="code">    <span class="kw">private</span> <span class="kw">boolean</span> allowLocalhost;</td></tr>
+<tr><td class="ln">36</td><td class="code"></td></tr>
+<tr><td class="ln">37</td><td class="code">    /**</td></tr>
+<tr><td class="ln">38</td><td class="code">     * Exposes BCryptPasswordEncoder as a bean.</td></tr>
+<tr><td class="ln">39</td><td class="code">     * Spring Boot auto-configuration picks <span class="kw">this</span> up alongside our CustomUserDetailsService</td></tr>
+<tr><td class="ln">40</td><td class="code">     * to wire a DaoAuthenticationProvider — no manual wiring needed.</td></tr>
+<tr><td class="ln">41</td><td class="code">     */</td></tr>
+<tr><td class="ln">42</td><td class="code">    <span <span class="kw">class</span>="ann">@Bean</span></td></tr>
+<tr><td class="ln">43</td><td class="code">    <span class="kw">public</span> PasswordEncoder passwordEncoder() {</td></tr>
+<tr><td class="ln">44</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> BCryptPasswordEncoder();</td></tr>
+<tr><td class="ln">45</td><td class="code">    }</td></tr>
+<tr><td class="ln">46</td><td class="code"></td></tr>
+<tr><td class="ln">47</td><td class="code">    /**</td></tr>
+<tr><td class="ln">48</td><td class="code">     * Exposes the auto-configured AuthenticationManager so AuthController can inject it.</td></tr>
+<tr><td class="ln">49</td><td class="code">     */</td></tr>
+<tr><td class="ln">50</td><td class="code">    <span <span class="kw">class</span>="ann">@Bean</span></td></tr>
+<tr><td class="ln">51</td><td class="code">    <span class="kw">public</span> AuthenticationManager authenticationManager(AuthenticationConfiguration config) <span class="kw">throws</span> Exception {</td></tr>
+<tr><td class="ln">52</td><td class="code">        <span class="kw">return</span> config.getAuthenticationManager();</td></tr>
+<tr><td class="ln">53</td><td class="code">    }</td></tr>
+<tr><td class="ln">54</td><td class="code"></td></tr>
+<tr><td class="ln">55</td><td class="code">    <span <span class="kw">class</span>="ann">@Bean</span></td></tr>
+<tr><td class="ln">56</td><td class="code">    <span class="kw">public</span> SecurityFilterChain securityFilterChain(HttpSecurity http) <span class="kw">throws</span> Exception {</td></tr>
+<tr><td class="ln">57</td><td class="code">        http</td></tr>
+<tr><td class="ln">58</td><td class="code">            .csrf(AbstractHttpConfigurer::disable)</td></tr>
+<tr><td class="ln">59</td><td class="code">            .cors(cors -&gt; cors.configurationSource(corsConfigurationSource()))</td></tr>
+<tr><td class="ln">60</td><td class="code">            .sessionManagement(session -&gt; session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))</td></tr>
+<tr><td class="ln">61</td><td class="code">            .authorizeHttpRequests(auth -&gt; auth</td></tr>
+<tr><td class="ln">62</td><td class="code">                .requestMatchers(<span <span class="kw">class</span>="str">&quot;/auth/**&quot;</span>).permitAll()</td></tr>
+<tr><td class="ln">63</td><td class="code">                .requestMatchers(<span <span class="kw">class</span>="str">&quot;/swagger-ui/**&quot;</span>, <span <span class="kw">class</span>="str">&quot;/swagger-ui.html&quot;</span>, <span <span class="kw">class</span>="str">&quot;/v3/api-docs/**&quot;</span>).permitAll()</td></tr>
+<tr><td class="ln">64</td><td class="code">                .anyRequest().authenticated()</td></tr>
+<tr><td class="ln">65</td><td class="code">            )</td></tr>
+<tr><td class="ln">66</td><td class="code">            .addFilterBefore(<span class="kw">new</span> LocalhostAdminFilter(allowLocalhost), UsernamePasswordAuthenticationFilter.<span class="kw">class</span>)</td></tr>
+<tr><td class="ln">67</td><td class="code">            .addFilterBefore(jwtAuthenticationFilter,   UsernamePasswordAuthenticationFilter.<span class="kw">class</span>);</td></tr>
+<tr><td class="ln">68</td><td class="code"></td></tr>
+<tr><td class="ln">69</td><td class="code">        <span class="kw">return</span> http.build();</td></tr>
+<tr><td class="ln">70</td><td class="code">    }</td></tr>
+<tr><td class="ln">71</td><td class="code"></td></tr>
+<tr><td class="ln">72</td><td class="code">    <span <span class="kw">class</span>="ann">@Bean</span></td></tr>
+<tr><td class="ln">73</td><td class="code">    <span class="kw">public</span> CorsConfigurationSource corsConfigurationSource() {</td></tr>
+<tr><td class="ln">74</td><td class="code">        CorsConfiguration config = <span class="kw">new</span> CorsConfiguration();</td></tr>
+<tr><td class="ln">75</td><td class="code">        config.setAllowedOrigins(List.of(<span <span class="kw">class</span>="str">&quot;http:<span <span class="kw">class</span>="cmt">//localhost:<span <span class="kw">class</span>="num">5173</span>&quot;</span>));</span></td></tr>
+<tr><td class="ln">76</td><td class="code">        config.setAllowedMethods(List.of(<span <span class="kw">class</span>="str">&quot;GET&quot;</span>, <span <span class="kw">class</span>="str">&quot;POST&quot;</span>, <span <span class="kw">class</span>="str">&quot;PUT&quot;</span>, <span <span class="kw">class</span>="str">&quot;DELETE&quot;</span>, <span <span class="kw">class</span>="str">&quot;OPTIONS&quot;</span>));</td></tr>
+<tr><td class="ln">77</td><td class="code">        config.setAllowedHeaders(List.of(<span <span class="kw">class</span>="str">&quot;*&quot;</span>));</td></tr>
+<tr><td class="ln">78</td><td class="code">        config.setAllowCredentials(<span class="kw">true</span>);</td></tr>
+<tr><td class="ln">79</td><td class="code"></td></tr>
+<tr><td class="ln">80</td><td class="code">        UrlBasedCorsConfigurationSource source = <span class="kw">new</span> UrlBasedCorsConfigurationSource();</td></tr>
+<tr><td class="ln">81</td><td class="code">        source.registerCorsConfiguration(<span <span class="kw">class</span>="str">&quot;/**&quot;</span>, config);</td></tr>
+<tr><td class="ln">82</td><td class="code">        <span class="kw">return</span> source;</td></tr>
+<tr><td class="ln">83</td><td class="code">    }</td></tr>
+<tr><td class="ln">84</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ClassAbsences.jsx</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This component manages the display and manipulation of student absence records for a specific class within the EduTrack system. It fetches class details, existing absences, schedules, and student lists upon mounting, then presents them in a tabular view filtered by academic term. Authorized users can add new absences, mark existing ones as excused, or delete records through a modal interface and inline actions. The component handles loading states, error notifications, and role-based access control to ensure only permitted staff can modify data. It serves as the primary interface for teachers and administrators to monitor and update attendance status for a given class.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">import</span> React, { useEffect, useState } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react&#x27;</span>;</td></tr>
+<tr><td class="ln">2</td><td class="code"><span class="kw">import</span> {</td></tr>
+<tr><td class="ln">3</td><td class="code">  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogActions,</td></tr>
+<tr><td class="ln">4</td><td class="code">  DialogContent, DialogTitle, FormControl, IconButton, InputLabel,</td></tr>
+<tr><td class="ln">5</td><td class="code">  MenuItem, Paper, Select, Tab, Table, TableBody, TableCell,</td></tr>
+<tr><td class="ln">6</td><td class="code">  TableContainer, TableHead, TableRow, Tabs, TextField, Typography,</td></tr>
+<tr><td class="ln">7</td><td class="code">} <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/material&#x27;</span>;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> DeleteIcon <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/icons-material/Delete&#x27;</span>;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> AddIcon <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/icons-material/Add&#x27;</span>;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> CheckIcon <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;<span <span class="kw">class</span>="ann">@mui</span>/icons-material/Check&#x27;</span>;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> { useParams } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-router-dom&#x27;</span>;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> { useTranslation } <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;react-i18next&#x27;</span>;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> Layout <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../components/Layout&#x27;</span>;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> api <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../api/axiosInstance&#x27;</span>;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> useAuth <span class="kw">from</span> <span <span class="kw">class</span>="str">&#x27;../../hooks/useAuth&#x27;</span>;</td></tr>
+<tr><td class="ln">16</td><td class="code"></td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">const</span> fieldSx = {</td></tr>
+<tr><td class="ln">18</td><td class="code">  InputProps: { sx: { color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span> } },</td></tr>
+<tr><td class="ln">19</td><td class="code">  InputLabelProps: { shrink: <span class="kw">true</span>, sx: { color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span>, &#x27;&amp;.Mui-focused<span <span class="kw">class</span>="str">&#x27;: { color: &#x27;</span>black&#x27; } } },</td></tr>
+<tr><td class="ln">20</td><td class="code">};</td></tr>
+<tr><td class="ln">21</td><td class="code"></td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">function</span> ClassAbsences() {</td></tr>
+<tr><td class="ln">23</td><td class="code">  <span class="kw">const</span> { classId } = useParams();</td></tr>
+<tr><td class="ln">24</td><td class="code">  <span class="kw">const</span> { t } = useTranslation();</td></tr>
+<tr><td class="ln">25</td><td class="code">  <span class="kw">const</span> { user } = useAuth();</td></tr>
+<tr><td class="ln">26</td><td class="code">  <span class="kw">const</span> canEdit = [<span <span class="kw">class</span>="str">&#x27;ADMIN&#x27;</span>, <span <span class="kw">class</span>="str">&#x27;HEADMASTER&#x27;</span>, <span <span class="kw">class</span>="str">&#x27;TEACHER&#x27;</span>].includes(user?.role);</td></tr>
+<tr><td class="ln">27</td><td class="code"></td></tr>
+<tr><td class="ln">28</td><td class="code">  <span class="kw">const</span> [classInfo, setClassInfo] = useState(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">29</td><td class="code">  <span class="kw">const</span> [absences, setAbsences]   = useState([]);</td></tr>
+<tr><td class="ln">30</td><td class="code">  <span class="kw">const</span> [schedules, setSchedules] = useState([]);</td></tr>
+<tr><td class="ln">31</td><td class="code">  <span class="kw">const</span> [students, setStudents]   = useState([]);</td></tr>
+<tr><td class="ln">32</td><td class="code">  <span class="kw">const</span> [loading, setLoading]     = useState(<span class="kw">true</span>);</td></tr>
+<tr><td class="ln">33</td><td class="code">  <span class="kw">const</span> [error, setError]         = useState(<span class="kw">null</span>);</td></tr>
+<tr><td class="ln">34</td><td class="code">  <span class="kw">const</span> [termTab, setTermTab]     = useState(<span <span class="kw">class</span>="num">0</span>);</td></tr>
+<tr><td class="ln">35</td><td class="code"></td></tr>
+<tr><td class="ln">36</td><td class="code">  <span class="kw">const</span> [addOpen, setAddOpen]     = useState(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">37</td><td class="code">  <span class="kw">const</span> [addForm, setAddForm]     = useState({ studentId: <span <span class="kw">class</span>="str">&#x27;&#x27;</span>, scheduleId: <span <span class="kw">class</span>="str">&#x27;&#x27;</span>, date: <span <span class="kw">class</span>="str">&#x27;&#x27;</span> });</td></tr>
+<tr><td class="ln">38</td><td class="code">  <span class="kw">const</span> [saving, setSaving]       = useState(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">39</td><td class="code"></td></tr>
+<tr><td class="ln">40</td><td class="code">  useEffect(() =&gt; {</td></tr>
+<tr><td class="ln">41</td><td class="code">    Promise.all([</td></tr>
+<tr><td class="ln">42</td><td class="code">      api.get(<span <span class="kw">class</span>="str">`/api/classes/${classId}`</span>),</td></tr>
+<tr><td class="ln">43</td><td class="code">      api.get(<span <span class="kw">class</span>="str">`/api/absences/<span class="kw">class</span>/${classId}`</span>),</td></tr>
+<tr><td class="ln">44</td><td class="code">      api.get(<span <span class="kw">class</span>="str">`/api/schedules/<span class="kw">class</span>/${classId}`</span>),</td></tr>
+<tr><td class="ln">45</td><td class="code">      api.get(<span <span class="kw">class</span>="str">`/api/classes/${classId}/students`</span>),</td></tr>
+<tr><td class="ln">46</td><td class="code">    ])</td></tr>
+<tr><td class="ln">47</td><td class="code">      .then(([ci, ab, sc, st]) =&gt; {</td></tr>
+<tr><td class="ln">48</td><td class="code">        setClassInfo(ci.data);</td></tr>
+<tr><td class="ln">49</td><td class="code">        setAbsences(ab.data);</td></tr>
+<tr><td class="ln">50</td><td class="code">        setSchedules(sc.data);</td></tr>
+<tr><td class="ln">51</td><td class="code">        setStudents(st.data);</td></tr>
+<tr><td class="ln">52</td><td class="code">      })</td></tr>
+<tr><td class="ln">53</td><td class="code">      .<span class="kw">catch</span>(() =&gt; setError(t(<span <span class="kw">class</span>="str">&#x27;absences.fetchError&#x27;</span>)))</td></tr>
+<tr><td class="ln">54</td><td class="code">      .<span class="kw">finally</span>(() =&gt; setLoading(<span class="kw">false</span>));</td></tr>
+<tr><td class="ln">55</td><td class="code">  }, [classId]);</td></tr>
+<tr><td class="ln">56</td><td class="code"></td></tr>
+<tr><td class="ln">57</td><td class="code">  <span class="kw">const</span> termFilter = termTab === <span <span class="kw">class</span>="num">0</span> ? <span class="kw">null</span> : termTab;</td></tr>
+<tr><td class="ln">58</td><td class="code">  <span class="kw">const</span> filtered = termFilter ? absences.filter(a =&gt; a.term === termFilter) : absences;</td></tr>
+<tr><td class="ln">59</td><td class="code">  <span class="kw">const</span> excusedCount = filtered.filter(a =&gt; a.excused).length;</td></tr>
+<tr><td class="ln">60</td><td class="code"></td></tr>
+<tr><td class="ln">61</td><td class="code">  <span class="kw">const</span> handleAdd = () =&gt; {</td></tr>
+<tr><td class="ln">62</td><td class="code">    setSaving(<span class="kw">true</span>);</td></tr>
+<tr><td class="ln">63</td><td class="code">    api.post(<span <span class="kw">class</span>="str">&#x27;/api/absences&#x27;</span>, {</td></tr>
+<tr><td class="ln">64</td><td class="code">      studentId: Number(addForm.studentId),</td></tr>
+<tr><td class="ln">65</td><td class="code">      scheduleId: Number(addForm.scheduleId),</td></tr>
+<tr><td class="ln">66</td><td class="code">      date: addForm.date,</td></tr>
+<tr><td class="ln">67</td><td class="code">    })</td></tr>
+<tr><td class="ln">68</td><td class="code">      .then(res =&gt; {</td></tr>
+<tr><td class="ln">69</td><td class="code">        setAbsences(prev =&gt; [...prev, res.data]);</td></tr>
+<tr><td class="ln">70</td><td class="code">        setAddOpen(<span class="kw">false</span>);</td></tr>
+<tr><td class="ln">71</td><td class="code">        setAddForm({ studentId: <span <span class="kw">class</span>="str">&#x27;&#x27;</span>, scheduleId: <span <span class="kw">class</span>="str">&#x27;&#x27;</span>, date: <span <span class="kw">class</span>="str">&#x27;&#x27;</span> });</td></tr>
+<tr><td class="ln">72</td><td class="code">      })</td></tr>
+<tr><td class="ln">73</td><td class="code">      .<span class="kw">catch</span>(() =&gt; setError(t(<span <span class="kw">class</span>="str">&#x27;absences.createError&#x27;</span>)))</td></tr>
+<tr><td class="ln">74</td><td class="code">      .<span class="kw">finally</span>(() =&gt; setSaving(<span class="kw">false</span>));</td></tr>
+<tr><td class="ln">75</td><td class="code">  };</td></tr>
+<tr><td class="ln">76</td><td class="code"></td></tr>
+<tr><td class="ln">77</td><td class="code">  <span class="kw">const</span> handleExcuse = (id) =&gt; {</td></tr>
+<tr><td class="ln">78</td><td class="code">    api.put(<span <span class="kw">class</span>="str">`/api/absences/${id}/excuse`</span>)</td></tr>
+<tr><td class="ln">79</td><td class="code">      .then(res =&gt; setAbsences(prev =&gt; prev.map(a =&gt; a.id === id ? res.data : a)))</td></tr>
+<tr><td class="ln">80</td><td class="code">      .<span class="kw">catch</span>(() =&gt; setError(t(<span <span class="kw">class</span>="str">&#x27;absences.fetchError&#x27;</span>)));</td></tr>
+<tr><td class="ln">81</td><td class="code">  };</td></tr>
+<tr><td class="ln">82</td><td class="code"></td></tr>
+<tr><td class="ln">83</td><td class="code">  <span class="kw">const</span> handleDelete = (id) =&gt; {</td></tr>
+<tr><td class="ln">84</td><td class="code">    api.<span class="kw">delete</span>(<span <span class="kw">class</span>="str">`/api/absences/${id}`</span>)</td></tr>
+<tr><td class="ln">85</td><td class="code">      .then(() =&gt; setAbsences(prev =&gt; prev.filter(a =&gt; a.id !== id)))</td></tr>
+<tr><td class="ln">86</td><td class="code">      .<span class="kw">catch</span>(() =&gt; setError(t(<span <span class="kw">class</span>="str">&#x27;absences.deleteError&#x27;</span>)));</td></tr>
+<tr><td class="ln">87</td><td class="code">  };</td></tr>
+<tr><td class="ln">88</td><td class="code"></td></tr>
+<tr><td class="ln">89</td><td class="code">  <span class="kw">const</span> isAddValid = addForm.studentId &amp;&amp; addForm.scheduleId &amp;&amp; addForm.date;</td></tr>
+<tr><td class="ln">90</td><td class="code"></td></tr>
+<tr><td class="ln">91</td><td class="code">  <span class="kw">return</span> (</td></tr>
+<tr><td class="ln">92</td><td class="code">    &lt;Layout&gt;</td></tr>
+<tr><td class="ln">93</td><td class="code">      &lt;Box sx={{ p: <span <span class="kw">class</span>="num">3</span> }}&gt;</td></tr>
+<tr><td class="ln">94</td><td class="code">        {loading ? (</td></tr>
+<tr><td class="ln">95</td><td class="code">          &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, justifyContent: <span <span class="kw">class</span>="str">&#x27;center&#x27;</span>, mt: <span <span class="kw">class</span>="num">4</span> }}&gt;&lt;CircularProgress /&gt;&lt;/Box&gt;</td></tr>
+<tr><td class="ln">96</td><td class="code">        ) : (</td></tr>
+<tr><td class="ln">97</td><td class="code">          &lt;&gt;</td></tr>
+<tr><td class="ln">98</td><td class="code">            &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, justifyContent: <span <span class="kw">class</span>="str">&#x27;space-between&#x27;</span>, alignItems: <span <span class="kw">class</span>="str">&#x27;flex-start&#x27;</span>, mb: <span <span class="kw">class</span>="num">2</span> }}&gt;</td></tr>
+<tr><td class="ln">99</td><td class="code">              &lt;Box&gt;</td></tr>
+<tr><td class="ln">100</td><td class="code">                &lt;Typography variant=<span <span class="kw">class</span>="str">&quot;h5&quot;</span>&gt;</td></tr>
+<tr><td class="ln">101</td><td class="code">                  {t(<span <span class="kw">class</span>="str">&#x27;absences.title&#x27;</span>)} — {classInfo?.name}</td></tr>
+<tr><td class="ln">102</td><td class="code">                &lt;/Typography&gt;</td></tr>
+<tr><td class="ln">103</td><td class="code">                &lt;Typography variant=<span <span class="kw">class</span>="str">&quot;body2&quot;</span> color=<span <span class="kw">class</span>="str">&quot;text.secondary&quot;</span>&gt;{classInfo?.schoolName}&lt;/Typography&gt;</td></tr>
+<tr><td class="ln">104</td><td class="code">              &lt;/Box&gt;</td></tr>
+<tr><td class="ln">105</td><td class="code">              {canEdit &amp;&amp; (</td></tr>
+<tr><td class="ln">106</td><td class="code">                &lt;Button variant=<span <span class="kw">class</span>="str">&quot;contained&quot;</span> startIcon={&lt;AddIcon /&gt;} onClick={() =&gt; setAddOpen(<span class="kw">true</span>)}&gt;</td></tr>
+<tr><td class="ln">107</td><td class="code">                  {t(<span <span class="kw">class</span>="str">&#x27;absences.addAbsence&#x27;</span>)}</td></tr>
+<tr><td class="ln">108</td><td class="code">                &lt;/Button&gt;</td></tr>
+<tr><td class="ln">109</td><td class="code">              )}</td></tr>
+<tr><td class="ln">110</td><td class="code">            &lt;/Box&gt;</td></tr>
+<tr><td class="ln">111</td><td class="code"></td></tr>
+<tr><td class="ln">112</td><td class="code">            {error &amp;&amp; &lt;Alert severity=<span <span class="kw">class</span>="str">&quot;error&quot;</span> sx={{ mb: <span <span class="kw">class</span>="num">2</span> }}&gt;{error}&lt;/Alert&gt;}</td></tr>
+<tr><td class="ln">113</td><td class="code"></td></tr>
+<tr><td class="ln">114</td><td class="code">            &lt;Tabs value={termTab} onChange={(_, v) =&gt; setTermTab(v)} sx={{ mb: <span <span class="kw">class</span>="num">1</span> }}&gt;</td></tr>
+<tr><td class="ln">115</td><td class="code">              &lt;Tab label={t(<span <span class="kw">class</span>="str">&#x27;grades.all&#x27;</span>)} /&gt;</td></tr>
+<tr><td class="ln">116</td><td class="code">              &lt;Tab label={t(<span <span class="kw">class</span>="str">&#x27;schedule.term1&#x27;</span>)} /&gt;</td></tr>
+<tr><td class="ln">117</td><td class="code">              &lt;Tab label={t(<span <span class="kw">class</span>="str">&#x27;schedule.term2&#x27;</span>)} /&gt;</td></tr>
+<tr><td class="ln">118</td><td class="code">            &lt;/Tabs&gt;</td></tr>
+<tr><td class="ln">119</td><td class="code"></td></tr>
+<tr><td class="ln">120</td><td class="code">            &lt;Box sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, gap: <span <span class="kw">class</span>="num">1</span>, mb: <span <span class="kw">class</span>="num">2</span> }}&gt;</td></tr>
+<tr><td class="ln">121</td><td class="code">              &lt;Chip label={<span <span class="kw">class</span>="str">`${t(&#x27;absences.total&#x27;)}: ${filtered.length}`</span>} /&gt;</td></tr>
+<tr><td class="ln">122</td><td class="code">              &lt;Chip label={<span <span class="kw">class</span>="str">`${t(&#x27;absences.excusedCount&#x27;)}: ${excusedCount}`</span>} color=<span <span class="kw">class</span>="str">&quot;success&quot;</span> variant=<span <span class="kw">class</span>="str">&quot;outlined&quot;</span> /&gt;</td></tr>
+<tr><td class="ln">123</td><td class="code">              &lt;Chip label={<span <span class="kw">class</span>="str">`${t(&#x27;absences.unexcusedCount&#x27;)}: ${filtered.length - excusedCount}`</span>} color=<span <span class="kw">class</span>="str">&quot;error&quot;</span> variant=<span <span class="kw">class</span>="str">&quot;outlined&quot;</span> /&gt;</td></tr>
+<tr><td class="ln">124</td><td class="code">            &lt;/Box&gt;</td></tr>
+<tr><td class="ln">125</td><td class="code"></td></tr>
+<tr><td class="ln">126</td><td class="code">            &lt;TableContainer component={Paper}&gt;</td></tr>
+<tr><td class="ln">127</td><td class="code">              &lt;Table size=<span <span class="kw">class</span>="str">&quot;small&quot;</span>&gt;</td></tr>
+<tr><td class="ln">128</td><td class="code">                &lt;TableHead&gt;</td></tr>
+<tr><td class="ln">129</td><td class="code">                  &lt;TableRow&gt;</td></tr>
+<tr><td class="ln">130</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.student&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">131</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.subject&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">132</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.teacher&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">133</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.term&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">134</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.date&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">135</td><td class="code">                    &lt;TableCell&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.excused&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">136</td><td class="code">                    {canEdit &amp;&amp; &lt;TableCell align=<span <span class="kw">class</span>="str">&quot;center&quot;</span>&gt;{t(<span <span class="kw">class</span>="str">&#x27;schools.actions&#x27;</span>)}&lt;/TableCell&gt;}</td></tr>
+<tr><td class="ln">137</td><td class="code">                  &lt;/TableRow&gt;</td></tr>
+<tr><td class="ln">138</td><td class="code">                &lt;/TableHead&gt;</td></tr>
+<tr><td class="ln">139</td><td class="code">                &lt;TableBody&gt;</td></tr>
+<tr><td class="ln">140</td><td class="code">                  {filtered.length === <span <span class="kw">class</span>="num">0</span> ? (</td></tr>
+<tr><td class="ln">141</td><td class="code">                    &lt;TableRow&gt;</td></tr>
+<tr><td class="ln">142</td><td class="code">                      &lt;TableCell colSpan={canEdit ? <span <span class="kw">class</span>="num">7</span> : <span <span class="kw">class</span>="num">6</span>} align=<span <span class="kw">class</span>="str">&quot;center&quot;</span>&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.noAbsences&#x27;</span>)}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">143</td><td class="code">                    &lt;/TableRow&gt;</td></tr>
+<tr><td class="ln">144</td><td class="code">                  ) : (</td></tr>
+<tr><td class="ln">145</td><td class="code">                    filtered.map(a =&gt; (</td></tr>
+<tr><td class="ln">146</td><td class="code">                      &lt;TableRow key={a.id} hover&gt;</td></tr>
+<tr><td class="ln">147</td><td class="code">                        &lt;TableCell&gt;{a.studentName}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">148</td><td class="code">                        &lt;TableCell&gt;{a.subjectName}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">149</td><td class="code">                        &lt;TableCell&gt;{a.teacherName}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">150</td><td class="code">                        &lt;TableCell&gt;{a.term}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">151</td><td class="code">                        &lt;TableCell&gt;{a.date}&lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">152</td><td class="code">                        &lt;TableCell&gt;</td></tr>
+<tr><td class="ln">153</td><td class="code">                          &lt;Chip</td></tr>
+<tr><td class="ln">154</td><td class="code">                            label={a.excused ? t(<span <span class="kw">class</span>="str">&#x27;absences.excused&#x27;</span>) : t(<span <span class="kw">class</span>="str">&#x27;absences.unexcused&#x27;</span>)}</td></tr>
+<tr><td class="ln">155</td><td class="code">                            size=<span <span class="kw">class</span>="str">&quot;small&quot;</span></td></tr>
+<tr><td class="ln">156</td><td class="code">                            color={a.excused ? <span <span class="kw">class</span>="str">&#x27;success&#x27;</span> : <span <span class="kw">class</span>="str">&#x27;error&#x27;</span>}</td></tr>
+<tr><td class="ln">157</td><td class="code">                            variant=<span <span class="kw">class</span>="str">&quot;outlined&quot;</span></td></tr>
+<tr><td class="ln">158</td><td class="code">                          /&gt;</td></tr>
+<tr><td class="ln">159</td><td class="code">                        &lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">160</td><td class="code">                        {canEdit &amp;&amp; (</td></tr>
+<tr><td class="ln">161</td><td class="code">                          &lt;TableCell align=<span <span class="kw">class</span>="str">&quot;center&quot;</span>&gt;</td></tr>
+<tr><td class="ln">162</td><td class="code">                            &lt;IconButton size=<span <span class="kw">class</span>="str">&quot;small&quot;</span> onClick={() =&gt; handleExcuse(a.id)} title={a.excused ? t(<span <span class="kw">class</span>="str">&#x27;absences.unexcuse&#x27;</span>) : t(<span <span class="kw">class</span>="str">&#x27;absences.excuse&#x27;</span>)}&gt;</td></tr>
+<tr><td class="ln">163</td><td class="code">                              &lt;CheckIcon fontSize=<span <span class="kw">class</span>="str">&quot;small&quot;</span> sx={{ color: a.excused ? <span <span class="kw">class</span>="str">&#x27;grey.<span <span class="kw">class</span>="num">500</span>&#x27;</span> : <span <span class="kw">class</span>="str">&#x27;green&#x27;</span> }} /&gt;</td></tr>
+<tr><td class="ln">164</td><td class="code">                            &lt;/IconButton&gt;</td></tr>
+<tr><td class="ln">165</td><td class="code">                            &lt;IconButton size=<span <span class="kw">class</span>="str">&quot;small&quot;</span> onClick={() =&gt; handleDelete(a.id)}&gt;</td></tr>
+<tr><td class="ln">166</td><td class="code">                              &lt;DeleteIcon fontSize=<span <span class="kw">class</span>="str">&quot;small&quot;</span> sx={{ color: <span <span class="kw">class</span>="str">&#x27;red&#x27;</span> }} /&gt;</td></tr>
+<tr><td class="ln">167</td><td class="code">                            &lt;/IconButton&gt;</td></tr>
+<tr><td class="ln">168</td><td class="code">                          &lt;/TableCell&gt;</td></tr>
+<tr><td class="ln">169</td><td class="code">                        )}</td></tr>
+<tr><td class="ln">170</td><td class="code">                      &lt;/TableRow&gt;</td></tr>
+<tr><td class="ln">171</td><td class="code">                    ))</td></tr>
+<tr><td class="ln">172</td><td class="code">                  )}</td></tr>
+<tr><td class="ln">173</td><td class="code">                &lt;/TableBody&gt;</td></tr>
+<tr><td class="ln">174</td><td class="code">              &lt;/Table&gt;</td></tr>
+<tr><td class="ln">175</td><td class="code">            &lt;/TableContainer&gt;</td></tr>
+<tr><td class="ln">176</td><td class="code">          &lt;/&gt;</td></tr>
+<tr><td class="ln">177</td><td class="code">        )}</td></tr>
+<tr><td class="ln">178</td><td class="code">      &lt;/Box&gt;</td></tr>
+<tr><td class="ln">179</td><td class="code"></td></tr>
+<tr><td class="ln">180</td><td class="code">      &lt;Dialog open={addOpen} onClose={() =&gt; setAddOpen(<span class="kw">false</span>)} fullWidth maxWidth=<span <span class="kw">class</span>="str">&quot;sm&quot;</span>&gt;</td></tr>
+<tr><td class="ln">181</td><td class="code">        &lt;DialogTitle&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.addAbsence&#x27;</span>)}&lt;/DialogTitle&gt;</td></tr>
+<tr><td class="ln">182</td><td class="code">        &lt;DialogContent sx={{ display: <span <span class="kw">class</span>="str">&#x27;flex&#x27;</span>, flexDirection: <span <span class="kw">class</span>="str">&#x27;column&#x27;</span>, gap: <span <span class="kw">class</span>="num">2</span>, pt: <span <span class="kw">class</span>="num">2</span> }}&gt;</td></tr>
+<tr><td class="ln">183</td><td class="code">          &lt;FormControl fullWidth&gt;</td></tr>
+<tr><td class="ln">184</td><td class="code">            &lt;InputLabel sx={{ color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span>, &#x27;&amp;.Mui-focused<span <span class="kw">class</span>="str">&#x27;: { color: &#x27;</span>black&#x27; } }}&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.student&#x27;</span>)}&lt;/InputLabel&gt;</td></tr>
+<tr><td class="ln">185</td><td class="code">            &lt;Select value={addForm.studentId} onChange={e =&gt; setAddForm(f =&gt; ({ ...f, studentId: e.target.value }))}</td></tr>
+<tr><td class="ln">186</td><td class="code">              label={t(<span <span class="kw">class</span>="str">&#x27;absences.student&#x27;</span>)} sx={{ color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span> }}&gt;</td></tr>
+<tr><td class="ln">187</td><td class="code">              {students.map(s =&gt; &lt;MenuItem key={s.id} value={s.id}&gt;{s.name}&lt;/MenuItem&gt;)}</td></tr>
+<tr><td class="ln">188</td><td class="code">            &lt;/Select&gt;</td></tr>
+<tr><td class="ln">189</td><td class="code">          &lt;/FormControl&gt;</td></tr>
+<tr><td class="ln">190</td><td class="code">          &lt;FormControl fullWidth&gt;</td></tr>
+<tr><td class="ln">191</td><td class="code">            &lt;InputLabel sx={{ color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span>, &#x27;&amp;.Mui-focused<span <span class="kw">class</span>="str">&#x27;: { color: &#x27;</span>black&#x27; } }}&gt;{t(<span <span class="kw">class</span>="str">&#x27;absences.subject&#x27;</span>)}&lt;/InputLabel&gt;</td></tr>
+<tr><td class="ln">192</td><td class="code">            &lt;Select value={addForm.scheduleId} onChange={e =&gt; setAddForm(f =&gt; ({ ...f, scheduleId: e.target.value }))}</td></tr>
+<tr><td class="ln">193</td><td class="code">              label={t(<span <span class="kw">class</span>="str">&#x27;absences.subject&#x27;</span>)} sx={{ color: <span <span class="kw">class</span>="str">&#x27;black&#x27;</span> }}&gt;</td></tr>
+<tr><td class="ln">194</td><td class="code">              {schedules.map(s =&gt; (</td></tr>
+<tr><td class="ln">195</td><td class="code">                &lt;MenuItem key={s.id} value={s.id}&gt;</td></tr>
+<tr><td class="ln">196</td><td class="code">                  {s.subjectName} — {t(<span <span class="kw">class</span>="str">&#x27;schedule.term&#x27;</span>)} {s.term}</td></tr>
+<tr><td class="ln">197</td><td class="code">                &lt;/MenuItem&gt;</td></tr>
+<tr><td class="ln">198</td><td class="code">              ))}</td></tr>
+<tr><td class="ln">199</td><td class="code">            &lt;/Select&gt;</td></tr>
+<tr><td class="ln">200</td><td class="code">          &lt;/FormControl&gt;</td></tr>
+<tr><td class="ln">201</td><td class="code">          &lt;TextField</td></tr>
+<tr><td class="ln">202</td><td class="code">            label={t(<span <span class="kw">class</span>="str">&#x27;absences.date&#x27;</span>)} type=<span <span class="kw">class</span>="str">&quot;date&quot;</span> value={addForm.date}</td></tr>
+<tr><td class="ln">203</td><td class="code">            onChange={e =&gt; setAddForm(f =&gt; ({ ...f, date: e.target.value }))}</td></tr>
+<tr><td class="ln">204</td><td class="code">            fullWidth {...fieldSx}</td></tr>
+<tr><td class="ln">205</td><td class="code">          /&gt;</td></tr>
+<tr><td class="ln">206</td><td class="code">        &lt;/DialogContent&gt;</td></tr>
+<tr><td class="ln">207</td><td class="code">        &lt;DialogActions&gt;</td></tr>
+<tr><td class="ln">208</td><td class="code">          &lt;Button onClick={() =&gt; setAddOpen(<span class="kw">false</span>)}&gt;{t(<span <span class="kw">class</span>="str">&#x27;common.cancel&#x27;</span>)}&lt;/Button&gt;</td></tr>
+<tr><td class="ln">209</td><td class="code">          &lt;Button variant=<span <span class="kw">class</span>="str">&quot;contained&quot;</span> onClick={handleAdd} disabled={!isAddValid || saving}&gt;</td></tr>
+<tr><td class="ln">210</td><td class="code">            {t(<span <span class="kw">class</span>="str">&#x27;common.save&#x27;</span>)}</td></tr>
+<tr><td class="ln">211</td><td class="code">          &lt;/Button&gt;</td></tr>
+<tr><td class="ln">212</td><td class="code">        &lt;/DialogActions&gt;</td></tr>
+<tr><td class="ln">213</td><td class="code">      &lt;/Dialog&gt;</td></tr>
+<tr><td class="ln">214</td><td class="code">    &lt;/Layout&gt;</td></tr>
+<tr><td class="ln">215</td><td class="code">  );</td></tr>
+<tr><td class="ln">216</td><td class="code">}</td></tr>
+<tr><td class="ln">217</td><td class="code"></td></tr>
+<tr><td class="ln">218</td><td class="code"><span class="kw">export</span> <span class="kw">default</span> ClassAbsences;</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

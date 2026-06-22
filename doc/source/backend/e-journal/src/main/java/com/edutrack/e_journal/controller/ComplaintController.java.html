@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ComplaintController.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This controller manages disciplinary complaint records within the EduTrack system by exposing RESTful endpoints under the /api/complaints path. It handles operations for listing complaints by class or specific student, allowing authorized users like teachers and administrators to view records. The system also permits students to retrieve their own complaint history and enables authorized staff to file new complaints or delete existing ones. Access to these endpoints is strictly controlled via role-based authorization to ensure data security. The implementation relies on a dedicated service layer to process business logic and returns standardized DTOs to the client.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.controller;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.ComplaintDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.ComplaintRequest;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.service.ComplaintService;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.Operation;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.Parameter;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponse;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.responses.ApiResponses;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.security.SecurityRequirement;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> io.swagger.v3.oas.annotations.tags.Tag;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> jakarta.validation.Valid;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">15</td><td class="code"><span class="kw">import</span> org.springframework.http.ResponseEntity;</td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> org.springframework.security.access.prepost.PreAuthorize;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> org.springframework.security.core.annotation.AuthenticationPrincipal;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">19</td><td class="code"><span class="kw">import</span> org.springframework.web.bind.annotation.*;</td></tr>
+<tr><td class="ln">20</td><td class="code"></td></tr>
+<tr><td class="ln">21</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">22</td><td class="code"></td></tr>
+<tr><td class="ln">23</td><td class="code"><span <span class="kw">class</span>="ann">@RestController</span></td></tr>
+<tr><td class="ln">24</td><td class="code"><span <span class="kw">class</span>="ann">@RequestMapping</span>(<span <span class="kw">class</span>="str">&quot;/api/complaints&quot;</span>)</td></tr>
+<tr><td class="ln">25</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">26</td><td class="code"><span <span class="kw">class</span>="ann">@Tag</span>(name = <span <span class="kw">class</span>="str">&quot;Complaints&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Record and query disciplinary complaints against students&quot;</span>)</td></tr>
+<tr><td class="ln">27</td><td class="code"><span <span class="kw">class</span>="ann">@SecurityRequirement</span>(name = <span <span class="kw">class</span>="str">&quot;bearerAuth&quot;</span>)</td></tr>
+<tr><td class="ln">28</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> ComplaintController {</td></tr>
+<tr><td class="ln">29</td><td class="code"></td></tr>
+<tr><td class="ln">30</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> ComplaintService complaintService;</td></tr>
+<tr><td class="ln">31</td><td class="code"></td></tr>
+<tr><td class="ln">32</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;List complaints <span class="kw">for</span> a <span class="kw">class</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Returns all complaints <span class="kw">for</span> every student in the given <span class="kw">class</span>. Accessible by ADMIN, HEADMASTER, and TEACHER.&quot;</span>)</td></tr>
+<tr><td class="ln">33</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint list returned&quot;</span>)</td></tr>
+<tr><td class="ln">34</td><td class="code">    <span <span class="kw">class</span>="ann">@GetMapping</span>(<span <span class="kw">class</span>="str">&quot;/<span class="kw">class</span>/{classId}&quot;</span>)</td></tr>
+<tr><td class="ln">35</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasAnyRole(&#x27;ADMIN&#x27;,&#x27;HEADMASTER&#x27;,&#x27;TEACHER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">36</td><td class="code">    <span class="kw">public</span> List&lt;ComplaintDto&gt; getByClass(</td></tr>
+<tr><td class="ln">37</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Class ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long classId) {</td></tr>
+<tr><td class="ln">38</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all complaints associated with the specified school <span class="kw">class</span></span></td></tr>
+<tr><td class="ln">39</td><td class="code">        <span class="kw">return</span> complaintService.getByClass(classId);</td></tr>
+<tr><td class="ln">40</td><td class="code">    }</td></tr>
+<tr><td class="ln">41</td><td class="code"></td></tr>
+<tr><td class="ln">42</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Get my complaints&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Returns complaints issued against the authenticated student.&quot;</span>)</td></tr>
+<tr><td class="ln">43</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint list returned&quot;</span>)</td></tr>
+<tr><td class="ln">44</td><td class="code">    <span <span class="kw">class</span>="ann">@GetMapping</span>(<span <span class="kw">class</span>="str">&quot;/student/me&quot;</span>)</td></tr>
+<tr><td class="ln">45</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasRole(&#x27;STUDENT&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">46</td><td class="code">    <span class="kw">public</span> List&lt;ComplaintDto&gt; getMyComplaints(<span <span class="kw">class</span>="ann">@AuthenticationPrincipal</span> UserDetails principal) {</td></tr>
+<tr><td class="ln">47</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all complaints associated with the authenticated student profile</span></td></tr>
+<tr><td class="ln">48</td><td class="code">        <span class="kw">return</span> complaintService.getByCurrentStudent(principal);</td></tr>
+<tr><td class="ln">49</td><td class="code">    }</td></tr>
+<tr><td class="ln">50</td><td class="code"></td></tr>
+<tr><td class="ln">51</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;List complaints <span class="kw">for</span> a student&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Returns all complaints <span class="kw">for</span> a specific student. Accessible by PARENT, ADMIN, HEADMASTER, and TEACHER.&quot;</span>)</td></tr>
+<tr><td class="ln">52</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">200</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint list returned&quot;</span>)</td></tr>
+<tr><td class="ln">53</td><td class="code">    <span <span class="kw">class</span>="ann">@GetMapping</span>(<span <span class="kw">class</span>="str">&quot;/student/{studentId}&quot;</span>)</td></tr>
+<tr><td class="ln">54</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasAnyRole(&#x27;PARENT&#x27;,&#x27;ADMIN&#x27;,&#x27;HEADMASTER&#x27;,&#x27;TEACHER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">55</td><td class="code">    <span class="kw">public</span> List&lt;ComplaintDto&gt; getByStudent(</td></tr>
+<tr><td class="ln">56</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Student user ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long studentId) {</td></tr>
+<tr><td class="ln">57</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the list of complaint DTOs associated with the specified student</span></td></tr>
+<tr><td class="ln">58</td><td class="code">        <span class="kw">return</span> complaintService.getByStudent(studentId);</td></tr>
+<tr><td class="ln">59</td><td class="code">    }</td></tr>
+<tr><td class="ln">60</td><td class="code"></td></tr>
+<tr><td class="ln">61</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;File a complaint&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Creates a <span class="kw">new</span> disciplinary complaint against a student. Accessible by TEACHER, ADMIN, and HEADMASTER.&quot;</span>)</td></tr>
+<tr><td class="ln">62</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">63</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">201</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint recorded&quot;</span>),</td></tr>
+<tr><td class="ln">64</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">400</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Invalid student or schedule ID&quot;</span>)</td></tr>
+<tr><td class="ln">65</td><td class="code">    })</td></tr>
+<tr><td class="ln">66</td><td class="code">    <span <span class="kw">class</span>="ann">@PostMapping</span></td></tr>
+<tr><td class="ln">67</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasAnyRole(&#x27;TEACHER&#x27;,&#x27;ADMIN&#x27;,&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">68</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;ComplaintDto&gt; create(<span <span class="kw">class</span>="ann">@Valid</span> <span <span class="kw">class</span>="ann">@RequestBody</span> ComplaintRequest req) {</td></tr>
+<tr><td class="ln">69</td><td class="code">        <span <span class="kw">class</span>="cmt">// Validate the complaint request DTO and delegate the creation logic to the service layer</span></td></tr>
+<tr><td class="ln">70</td><td class="code">        <span class="kw">return</span> ResponseEntity.status(HttpStatus.CREATED).body(complaintService.create(req));</td></tr>
+<tr><td class="ln">71</td><td class="code">    }</td></tr>
+<tr><td class="ln">72</td><td class="code"></td></tr>
+<tr><td class="ln">73</td><td class="code">    <span <span class="kw">class</span>="ann">@Operation</span>(summary = <span <span class="kw">class</span>="str">&quot;Delete a complaint&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Permanently removes a complaint record. Accessible by TEACHER, ADMIN, and HEADMASTER.&quot;</span>)</td></tr>
+<tr><td class="ln">74</td><td class="code">    <span <span class="kw">class</span>="ann">@ApiResponses</span>({</td></tr>
+<tr><td class="ln">75</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">204</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint deleted&quot;</span>),</td></tr>
+<tr><td class="ln">76</td><td class="code">        <span <span class="kw">class</span>="ann">@ApiResponse</span>(responseCode = <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">404</span>&quot;</span>, description = <span <span class="kw">class</span>="str">&quot;Complaint not found&quot;</span>)</td></tr>
+<tr><td class="ln">77</td><td class="code">    })</td></tr>
+<tr><td class="ln">78</td><td class="code">    <span <span class="kw">class</span>="ann">@DeleteMapping</span>(<span <span class="kw">class</span>="str">&quot;/{id}&quot;</span>)</td></tr>
+<tr><td class="ln">79</td><td class="code">    <span <span class="kw">class</span>="ann">@PreAuthorize</span>(<span <span class="kw">class</span>="str">&quot;hasAnyRole(&#x27;TEACHER&#x27;,&#x27;ADMIN&#x27;,&#x27;HEADMASTER&#x27;)&quot;</span>)</td></tr>
+<tr><td class="ln">80</td><td class="code">    <span class="kw">public</span> ResponseEntity&lt;Void&gt; delete(</td></tr>
+<tr><td class="ln">81</td><td class="code">            <span <span class="kw">class</span>="ann">@Parameter</span>(description = <span <span class="kw">class</span>="str">&quot;Complaint ID&quot;</span>) <span <span class="kw">class</span>="ann">@PathVariable</span> Long id) {</td></tr>
+<tr><td class="ln">82</td><td class="code">        complaintService.delete(id);</td></tr>
+<tr><td class="ln">83</td><td class="code">        <span class="kw">return</span> ResponseEntity.noContent().build();</td></tr>
+<tr><td class="ln">84</td><td class="code">    }</td></tr>
+<tr><td class="ln">85</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>

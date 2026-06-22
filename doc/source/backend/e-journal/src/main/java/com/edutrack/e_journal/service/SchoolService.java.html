@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>SchoolService.java</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d1117; color: #c9d1d9;
+       display: flex; height: 100vh; overflow: hidden; }
+#sidebar { width: 290px; min-width: 200px; background: #161b22;
+           border-right: 1px solid #30363d; overflow-y: auto; display: flex; flex-direction: column; }
+#sidebar h2 { padding: 14px 16px; font-size: 12px; text-transform: uppercase;
+              letter-spacing: .09em; color: #8b949e; border-bottom: 1px solid #30363d; flex-shrink: 0; }
+.tree { padding: 8px 0; flex: 1; }
+.tree summary { padding: 4px 12px; cursor: pointer; font-size: 12px; color: #8b949e;
+                list-style: none; display: flex; align-items: center; gap: 6px; user-select: none; }
+.tree summary:hover { background: #21262d; }
+.tree summary::before { content: '▶'; font-size: 9px; transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree a { display: block; padding: 3px 12px 3px 28px; font-size: 12px; color: #58a6ff;
+          text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree a:hover { background: #21262d; }
+.tree a.active { background: #1f3a5f; color: #79c0ff; }
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#file-header { padding: 10px 20px; background: #161b22; border-bottom: 1px solid #30363d;
+               font-size: 13px; color: #8b949e; flex-shrink: 0; }
+#file-header span { color: #c9d1d9; font-weight: 600; }
+#code-wrap { flex: 1; overflow: auto; }
+.index-page { padding: 32px; max-width: 860px; }
+.index-page h1 { font-size: 24px; margin-bottom: 8px; }
+.index-page p  { color: #8b949e; margin-bottom: 24px; }
+.index-page h2 { font-size: 14px; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: .07em; margin: 24px 0 8px; }
+.index-page ul { list-style: none; }
+.index-page li { margin-bottom: 4px; }
+.index-page li a { color: #58a6ff; font-size: 13px; text-decoration: none; }
+.index-page li a:hover { text-decoration: underline; }
+.summary-box { margin: 0; padding: 14px 20px; background: #161b22;
+               border-bottom: 1px solid #30363d; font-size: 13px;
+               color: #c9d1d9; line-height: 1.7; }
+.summary-box .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+                       color: #8b949e; margin-bottom: 6px; }
+table.hl { border-collapse: collapse; width: 100%;
+           font-family: 'JetBrains Mono','Fira Code',monospace; font-size: 13px; line-height: 1.6; }
+table.hl tr:hover td { background: #161b22; }
+td.ln   { width: 1%; min-width: 48px; padding: 0 16px 0 8px; text-align: right;
+          color: #484f58; border-right: 1px solid #21262d; user-select: none; white-space: nowrap; }
+td.code { padding: 0 20px; white-space: pre; }
+.kw  { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.ann { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Standalone overrides (no sidebar when opened directly) */
+body { display: block; height: auto; overflow: auto; padding: 0; }
+#content { display: block; }
+</style>
+</head>
+<body>
+<div id="content">
+<div class="summary-box"><div class="label">Summary</div>This service manages the lifecycle of school entities and their associated profiles within the EduTrack system. It handles core CRUD operations for schools, including creation, updates, and deletion, while enforcing access control for headmasters. The service also manages school profiles by retrieving, adding, and updating them in relation to specific schools. Additionally, it processes school schedules and term configurations to support the e-journal&#x27;s temporal structure. All data transformations between entities and DTOs are centralized within this class to maintain consistency. This service acts as the primary business logic layer for school-related operations in the application.</div>
+<table class="hl"><tbody>
+<tr><td class="ln">1</td><td class="code"><span class="kw">package</span> com.edutrack.e_journal.service;</td></tr>
+<tr><td class="ln">2</td><td class="code"></td></tr>
+<tr><td class="ln">3</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolDto;</td></tr>
+<tr><td class="ln">4</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolRequest;</td></tr>
+<tr><td class="ln">5</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolScheduleEntryDto;</td></tr>
+<tr><td class="ln">6</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolScheduleEntryRequest;</td></tr>
+<tr><td class="ln">7</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.dto.SchoolTermConfigDto;</td></tr>
+<tr><td class="ln">8</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.entity.*;</td></tr>
+<tr><td class="ln">9</td><td class="code"><span class="kw">import</span> com.edutrack.e_journal.repository.*;</td></tr>
+<tr><td class="ln">10</td><td class="code"><span class="kw">import</span> lombok.RequiredArgsConstructor;</td></tr>
+<tr><td class="ln">11</td><td class="code"><span class="kw">import</span> org.springframework.http.HttpStatus;</td></tr>
+<tr><td class="ln">12</td><td class="code"><span class="kw">import</span> org.springframework.security.core.userdetails.UserDetails;</td></tr>
+<tr><td class="ln">13</td><td class="code"><span class="kw">import</span> org.springframework.stereotype.Service;</td></tr>
+<tr><td class="ln">14</td><td class="code"><span class="kw">import</span> org.springframework.web.server.ResponseStatusException;</td></tr>
+<tr><td class="ln">15</td><td class="code"></td></tr>
+<tr><td class="ln">16</td><td class="code"><span class="kw">import</span> java.time.LocalDate;</td></tr>
+<tr><td class="ln">17</td><td class="code"><span class="kw">import</span> java.time.LocalTime;</td></tr>
+<tr><td class="ln">18</td><td class="code"><span class="kw">import</span> java.util.List;</td></tr>
+<tr><td class="ln">19</td><td class="code"></td></tr>
+<tr><td class="ln">20</td><td class="code"><span <span class="kw">class</span>="ann">@Service</span></td></tr>
+<tr><td class="ln">21</td><td class="code"><span <span class="kw">class</span>="ann">@RequiredArgsConstructor</span></td></tr>
+<tr><td class="ln">22</td><td class="code"><span class="kw">public</span> <span class="kw">class</span> SchoolService {</td></tr>
+<tr><td class="ln">23</td><td class="code"></td></tr>
+<tr><td class="ln">24</td><td class="code">    <span class="kw">private</span> <span class="kw">static</span> <span class="kw">final</span> SchoolTermConfigDto DEFAULT_TERM_CONFIG =</td></tr>
+<tr><td class="ln">25</td><td class="code">            <span class="kw">new</span> SchoolTermConfigDto(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">09</span>-<span <span class="kw">class</span>="num">15</span>&quot;</span>, <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">02</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>, <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">06</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>, <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">06</span>-<span <span class="kw">class</span>="num">15</span>&quot;</span>, <span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">07</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>);</td></tr>
+<tr><td class="ln">26</td><td class="code"></td></tr>
+<tr><td class="ln">27</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolRepository              schoolRepository;</td></tr>
+<tr><td class="ln">28</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> UserRepository                userRepository;</td></tr>
+<tr><td class="ln">29</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolProfileRepository       profileRepository;</td></tr>
+<tr><td class="ln">30</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolScheduleEntryRepository scheduleEntryRepository;</td></tr>
+<tr><td class="ln">31</td><td class="code">    <span class="kw">private</span> <span class="kw">final</span> SchoolTermConfigRepository    termConfigRepository;</td></tr>
+<tr><td class="ln">32</td><td class="code"></td></tr>
+<tr><td class="ln">33</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Schools ───────────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">34</td><td class="code"></td></tr>
+<tr><td class="ln">35</td><td class="code">    <span <span class="kw">class</span>="cmt">// Retrieve all schools from the database and map them to their respective DTOs</span></td></tr>
+<tr><td class="ln">36</td><td class="code">    <span class="kw">public</span> List&lt;SchoolDto&gt; getAllSchools() {</td></tr>
+<tr><td class="ln">37</td><td class="code">        <span <span class="kw">class</span>="cmt">// Fetch all managed School entities and transform the stream into a list of DTOs</span></td></tr>
+<tr><td class="ln">38</td><td class="code">        <span class="kw">return</span> schoolRepository.findAll().stream().map(<span class="kw">this</span>::toDto).toList();</td></tr>
+<tr><td class="ln">39</td><td class="code">    }</td></tr>
+<tr><td class="ln">40</td><td class="code"></td></tr>
+<tr><td class="ln">41</td><td class="code">    <span class="kw">public</span> SchoolDto getSchoolById(Long id) {</td></tr>
+<tr><td class="ln">42</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school by its primary key and map to DTO or handle missing entity</span></td></tr>
+<tr><td class="ln">43</td><td class="code">        <span class="kw">return</span> schoolRepository.findById(id)</td></tr>
+<tr><td class="ln">44</td><td class="code">                .map(<span class="kw">this</span>::toDto)</td></tr>
+<tr><td class="ln">45</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">46</td><td class="code">    }</td></tr>
+<tr><td class="ln">47</td><td class="code"></td></tr>
+<tr><td class="ln">48</td><td class="code">    <span class="kw">public</span> SchoolDto createSchool(SchoolRequest req) {</td></tr>
+<tr><td class="ln">49</td><td class="code">        <span <span class="kw">class</span>="cmt">// Initialize a <span class="kw">new</span> School entity from the request DTO</span></td></tr>
+<tr><td class="ln">50</td><td class="code">        School school = School.builder()</td></tr>
+<tr><td class="ln">51</td><td class="code">                .name(req.getName())</td></tr>
+<tr><td class="ln">52</td><td class="code">                .address(req.getAddress())</td></tr>
+<tr><td class="ln">53</td><td class="code">                <span <span class="kw">class</span>="cmt">// Map the raw type string to the SchoolType <span class="kw">enum</span></span></td></tr>
+<tr><td class="ln">54</td><td class="code">                .type(resolveType(req.getType()))</td></tr>
+<tr><td class="ln">55</td><td class="code">                <span <span class="kw">class</span>="cmt">// Load the managed User entity to serve as the school&#x27;s headmaster</span></td></tr>
+<tr><td class="ln">56</td><td class="code">                .director(resolveHeadmasterById(req.getHeadmasterId()))</td></tr>
+<tr><td class="ln">57</td><td class="code">                .build();</td></tr>
+<tr><td class="ln">58</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the <span class="kw">new</span> school to the database and map the result back to a DTO</span></td></tr>
+<tr><td class="ln">59</td><td class="code">        <span class="kw">return</span> toDto(schoolRepository.save(school));</td></tr>
+<tr><td class="ln">60</td><td class="code">    }</td></tr>
+<tr><td class="ln">61</td><td class="code"></td></tr>
+<tr><td class="ln">62</td><td class="code">    <span class="kw">public</span> SchoolDto updateSchool(Long id, SchoolRequest req) {</td></tr>
+<tr><td class="ln">63</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update the existing school entity with <span class="kw">new</span> request data</span></td></tr>
+<tr><td class="ln">64</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or <span class="kw">throw</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> not found</span></td></tr>
+<tr><td class="ln">65</td><td class="code">        School school = schoolRepository.findById(id)</td></tr>
+<tr><td class="ln">66</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">67</td><td class="code">    </td></tr>
+<tr><td class="ln">68</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the updated fields from the DTO to the entity</span></td></tr>
+<tr><td class="ln">69</td><td class="code">        school.setName(req.getName());</td></tr>
+<tr><td class="ln">70</td><td class="code">        school.setAddress(req.getAddress());</td></tr>
+<tr><td class="ln">71</td><td class="code">    </td></tr>
+<tr><td class="ln">72</td><td class="code">        <span <span class="kw">class</span>="cmt">// Resolve the school type and headmaster from their respective identifiers</span></td></tr>
+<tr><td class="ln">73</td><td class="code">        school.setType(resolveType(req.getType()));</td></tr>
+<tr><td class="ln">74</td><td class="code">        school.setDirector(resolveHeadmasterById(req.getHeadmasterId()));</td></tr>
+<tr><td class="ln">75</td><td class="code">    </td></tr>
+<tr><td class="ln">76</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist changes and <span class="kw">return</span> the updated school DTO</span></td></tr>
+<tr><td class="ln">77</td><td class="code">        <span class="kw">return</span> toDto(schoolRepository.save(school));</td></tr>
+<tr><td class="ln">78</td><td class="code">    }</td></tr>
+<tr><td class="ln">79</td><td class="code"></td></tr>
+<tr><td class="ln">80</td><td class="code">    <span class="kw">public</span> SchoolDto updateSchoolInfo(Long schoolId, String name, String address,</td></tr>
+<tr><td class="ln">81</td><td class="code">                                      UserDetails principal) {</td></tr>
+<tr><td class="ln">82</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the authenticated headmaster has authority over the target school</span></td></tr>
+<tr><td class="ln">83</td><td class="code">        checkHeadmasterSchoolAccess(principal, schoolId);</td></tr>
+<tr><td class="ln">84</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or <span class="kw">return</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">85</td><td class="code">        School school = schoolRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">86</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">87</td><td class="code">        <span <span class="kw">class</span>="cmt">// Apply the updated profile information to the entity</span></td></tr>
+<tr><td class="ln">88</td><td class="code">        school.setName(name);</td></tr>
+<tr><td class="ln">89</td><td class="code">        school.setAddress(address);</td></tr>
+<tr><td class="ln">90</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist changes to the database and map the updated entity to a DTO</span></td></tr>
+<tr><td class="ln">91</td><td class="code">        <span class="kw">return</span> toDto(schoolRepository.save(school));</td></tr>
+<tr><td class="ln">92</td><td class="code">    }</td></tr>
+<tr><td class="ln">93</td><td class="code"></td></tr>
+<tr><td class="ln">94</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> deleteSchool(Long id) {</td></tr>
+<tr><td class="ln">95</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the school exists before attempting deletion</span></td></tr>
+<tr><td class="ln">96</td><td class="code">        <span class="kw">if</span> (!schoolRepository.existsById(id))</td></tr>
+<tr><td class="ln">97</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>);</td></tr>
+<tr><td class="ln">98</td><td class="code">        <span <span class="kw">class</span>="cmt">// Remove the school entity from the database</span></td></tr>
+<tr><td class="ln">99</td><td class="code">        schoolRepository.deleteById(id);</td></tr>
+<tr><td class="ln">100</td><td class="code">    }</td></tr>
+<tr><td class="ln">101</td><td class="code"></td></tr>
+<tr><td class="ln">102</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Profiles ──────────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">103</td><td class="code"></td></tr>
+<tr><td class="ln">104</td><td class="code">    <span class="kw">public</span> List&lt;SchoolDto.ProfileDto&gt; getProfiles(Long schoolId) {</td></tr>
+<tr><td class="ln">105</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve all school profiles associated with the given school ID and map them to DTOs</span></td></tr>
+<tr><td class="ln">106</td><td class="code">        <span class="kw">return</span> profileRepository.findAllBySchool_Id(schoolId).stream()</td></tr>
+<tr><td class="ln">107</td><td class="code">                <span <span class="kw">class</span>="cmt">// Transform each managed Profile entity into a lightweight ProfileDto</span></td></tr>
+<tr><td class="ln">108</td><td class="code">                .map(p -&gt; <span class="kw">new</span> SchoolDto.ProfileDto(p.getId(), p.getName()))</td></tr>
+<tr><td class="ln">109</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">110</td><td class="code">    }</td></tr>
+<tr><td class="ln">111</td><td class="code"></td></tr>
+<tr><td class="ln">112</td><td class="code">    <span class="kw">public</span> SchoolDto.ProfileDto addProfile(Long schoolId, String name) {</td></tr>
+<tr><td class="ln">113</td><td class="code">        <span <span class="kw">class</span>="cmt">// Create a <span class="kw">new</span> school profile and associate it with an existing school</span></td></tr>
+<tr><td class="ln">114</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or <span class="kw">throw</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">115</td><td class="code">        School school = schoolRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">116</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">117</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the profile name and establish the many-to-one relationship with the school</span></td></tr>
+<tr><td class="ln">118</td><td class="code">        SchoolProfile profile = SchoolProfile.builder().name(name).school(school).build();</td></tr>
+<tr><td class="ln">119</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the <span class="kw">new</span> profile to the database</span></td></tr>
+<tr><td class="ln">120</td><td class="code">        SchoolProfile saved = profileRepository.save(profile);</td></tr>
+<tr><td class="ln">121</td><td class="code">        <span <span class="kw">class</span>="cmt">// Return a flattened DTO <span class="kw">for</span> the API response</span></td></tr>
+<tr><td class="ln">122</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> SchoolDto.ProfileDto(saved.getId(), saved.getName());</td></tr>
+<tr><td class="ln">123</td><td class="code">    }</td></tr>
+<tr><td class="ln">124</td><td class="code"></td></tr>
+<tr><td class="ln">125</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> deleteProfile(Long profileId) {</td></tr>
+<tr><td class="ln">126</td><td class="code">        <span <span class="kw">class</span>="cmt">// Remove a profile from the database by its ID</span></td></tr>
+<tr><td class="ln">127</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check <span class="kw">if</span> the profile exists before attempting deletion</span></td></tr>
+<tr><td class="ln">128</td><td class="code">        <span class="kw">if</span> (!profileRepository.existsById(profileId))</td></tr>
+<tr><td class="ln">129</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Profile not found&quot;</span>);</td></tr>
+<tr><td class="ln">130</td><td class="code">        <span <span class="kw">class</span>="cmt">// Perform the deletion of the managed profile entity</span></td></tr>
+<tr><td class="ln">131</td><td class="code">        profileRepository.deleteById(profileId);</td></tr>
+<tr><td class="ln">132</td><td class="code">    }</td></tr>
+<tr><td class="ln">133</td><td class="code"></td></tr>
+<tr><td class="ln">134</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Daily Schedule ────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">135</td><td class="code"></td></tr>
+<tr><td class="ln">136</td><td class="code">    <span class="kw">public</span> List&lt;SchoolScheduleEntryDto&gt; getSchedule(Long schoolId) {</td></tr>
+<tr><td class="ln">137</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school&#x27;s daily schedule entries ordered by their display sequence</span></td></tr>
+<tr><td class="ln">138</td><td class="code">        <span class="kw">return</span> scheduleEntryRepository.findAllBySchool_IdOrderBySortOrder(schoolId).stream()</td></tr>
+<tr><td class="ln">139</td><td class="code">                <span <span class="kw">class</span>="cmt">// Map each managed ScheduleEntry entity to its corresponding DTO</span></td></tr>
+<tr><td class="ln">140</td><td class="code">                .map(<span class="kw">this</span>::toScheduleDto).toList();</td></tr>
+<tr><td class="ln">141</td><td class="code">    }</td></tr>
+<tr><td class="ln">142</td><td class="code"></td></tr>
+<tr><td class="ln">143</td><td class="code">    <span class="kw">public</span> SchoolScheduleEntryDto addScheduleEntry(Long schoolId, SchoolScheduleEntryRequest req,</td></tr>
+<tr><td class="ln">144</td><td class="code">                                                   UserDetails principal) {</td></tr>
+<tr><td class="ln">145</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the authenticated headmaster has authority over the target school</span></td></tr>
+<tr><td class="ln">146</td><td class="code">        checkHeadmasterSchoolAccess(principal, schoolId);</td></tr>
+<tr><td class="ln">147</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or abort <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">148</td><td class="code">        School school = schoolRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">149</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">150</td><td class="code">        <span <span class="kw">class</span>="cmt">// Calculate the next available sort order based on existing entries <span class="kw">for</span> <span class="kw">this</span> school</span></td></tr>
+<tr><td class="ln">151</td><td class="code">        <span class="kw">int</span> nextOrder = scheduleEntryRepository.findAllBySchool_IdOrderBySortOrder(schoolId).size();</td></tr>
+<tr><td class="ln">152</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the request DTO to a <span class="kw">new</span> Schedule entry entity using the builder pattern</span></td></tr>
+<tr><td class="ln">153</td><td class="code">        SchoolScheduleEntry entry = SchoolScheduleEntry.builder()</td></tr>
+<tr><td class="ln">154</td><td class="code">                .school(school)</td></tr>
+<tr><td class="ln">155</td><td class="code">                .type(resolveEntryType(req.getType()))</td></tr>
+<tr><td class="ln">156</td><td class="code">                .label(req.getLabel())</td></tr>
+<tr><td class="ln">157</td><td class="code">                .startTime(LocalTime.parse(req.getStartTime()))</td></tr>
+<tr><td class="ln">158</td><td class="code">                .endTime(LocalTime.parse(req.getEndTime()))</td></tr>
+<tr><td class="ln">159</td><td class="code">                .eventDate(parseDate(req.getEventDate()))</td></tr>
+<tr><td class="ln">160</td><td class="code">                .sortOrder(req.getSortOrder() != <span class="kw">null</span> ? req.getSortOrder() : nextOrder)</td></tr>
+<tr><td class="ln">161</td><td class="code">                .build();</td></tr>
+<tr><td class="ln">162</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the <span class="kw">new</span> entry and <span class="kw">return</span> the transformed DTO</span></td></tr>
+<tr><td class="ln">163</td><td class="code">        <span class="kw">return</span> toScheduleDto(scheduleEntryRepository.save(entry));</td></tr>
+<tr><td class="ln">164</td><td class="code">    }</td></tr>
+<tr><td class="ln">165</td><td class="code"></td></tr>
+<tr><td class="ln">166</td><td class="code">    <span class="kw">public</span> SchoolScheduleEntryDto updateScheduleEntry(Long entryId, SchoolScheduleEntryRequest req,</td></tr>
+<tr><td class="ln">167</td><td class="code">                                                       UserDetails principal) {</td></tr>
+<tr><td class="ln">168</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update an existing schedule entry with <span class="kw">new</span> details after verifying authority</span></td></tr>
+<tr><td class="ln">169</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed schedule entry or <span class="kw">return</span> <span <span class="kw">class</span>="num">404</span></span></td></tr>
+<tr><td class="ln">170</td><td class="code">        SchoolScheduleEntry entry = scheduleEntryRepository.findById(entryId)</td></tr>
+<tr><td class="ln">171</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Schedule entry not found&quot;</span>));</td></tr>
+<tr><td class="ln">172</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check the headmaster&#x27;s authority on <span class="kw">this</span> specific school</span></td></tr>
+<tr><td class="ln">173</td><td class="code">        checkHeadmasterSchoolAccess(principal, entry.getSchool().getId());</td></tr>
+<tr><td class="ln">174</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the request DTO values to the entity</span></td></tr>
+<tr><td class="ln">175</td><td class="code">        entry.setType(resolveEntryType(req.getType()));</td></tr>
+<tr><td class="ln">176</td><td class="code">        entry.setLabel(req.getLabel());</td></tr>
+<tr><td class="ln">177</td><td class="code">        entry.setStartTime(LocalTime.parse(req.getStartTime()));</td></tr>
+<tr><td class="ln">178</td><td class="code">        entry.setEndTime(LocalTime.parse(req.getEndTime()));</td></tr>
+<tr><td class="ln">179</td><td class="code">        entry.setEventDate(parseDate(req.getEventDate()));</td></tr>
+<tr><td class="ln">180</td><td class="code">        <span <span class="kw">class</span>="cmt">// Apply sort order only <span class="kw">if</span> provided in the request</span></td></tr>
+<tr><td class="ln">181</td><td class="code">        <span class="kw">if</span> (req.getSortOrder() != <span class="kw">null</span>) entry.setSortOrder(req.getSortOrder());</td></tr>
+<tr><td class="ln">182</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist changes and <span class="kw">return</span> the updated DTO</span></td></tr>
+<tr><td class="ln">183</td><td class="code">        <span class="kw">return</span> toScheduleDto(scheduleEntryRepository.save(entry));</td></tr>
+<tr><td class="ln">184</td><td class="code">    }</td></tr>
+<tr><td class="ln">185</td><td class="code"></td></tr>
+<tr><td class="ln">186</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> deleteScheduleEntry(Long entryId, UserDetails principal) {</td></tr>
+<tr><td class="ln">187</td><td class="code">        <span <span class="kw">class</span>="cmt">// Remove a specific schedule entry from the database after verifying ownership</span></td></tr>
+<tr><td class="ln">188</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed schedule entry or <span class="kw">throw</span> <span <span class="kw">class</span>="num">404</span> <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">189</td><td class="code">        SchoolScheduleEntry entry = scheduleEntryRepository.findById(entryId)</td></tr>
+<tr><td class="ln">190</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;Schedule entry not found&quot;</span>));</td></tr>
+<tr><td class="ln">191</td><td class="code">        <span <span class="kw">class</span>="cmt">// Check the headmaster&#x27;s authority on the school associated with <span class="kw">this</span> entry</span></td></tr>
+<tr><td class="ln">192</td><td class="code">        checkHeadmasterSchoolAccess(principal, entry.getSchool().getId());</td></tr>
+<tr><td class="ln">193</td><td class="code">        <span <span class="kw">class</span>="cmt">// Perform the deletion of the schedule record</span></td></tr>
+<tr><td class="ln">194</td><td class="code">        scheduleEntryRepository.deleteById(entryId);</td></tr>
+<tr><td class="ln">195</td><td class="code">    }</td></tr>
+<tr><td class="ln">196</td><td class="code"></td></tr>
+<tr><td class="ln">197</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Term Config ───────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">198</td><td class="code"></td></tr>
+<tr><td class="ln">199</td><td class="code">    <span class="kw">public</span> SchoolTermConfigDto getTermConfig(Long schoolId) {</td></tr>
+<tr><td class="ln">200</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school&#x27;s term configuration or fallback to system defaults</span></td></tr>
+<tr><td class="ln">201</td><td class="code">        <span class="kw">return</span> termConfigRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">202</td><td class="code">                <span <span class="kw">class</span>="cmt">// Map the managed entity to a DTO to decouple the API response from the database model</span></td></tr>
+<tr><td class="ln">203</td><td class="code">                .map(c -&gt; <span class="kw">new</span> SchoolTermConfigDto(c.getStartDate(), c.getTerm2Start(),</td></tr>
+<tr><td class="ln">204</td><td class="code">                        c.getElementaryEnd(), c.getProgymnasiumEnd(), c.getGymnasiumEnd()))</td></tr>
+<tr><td class="ln">205</td><td class="code">                <span <span class="kw">class</span>="cmt">// Return the <span class="kw">default</span> configuration <span class="kw">if</span> no specific config is found <span class="kw">for</span> the school</span></td></tr>
+<tr><td class="ln">206</td><td class="code">                .orElse(DEFAULT_TERM_CONFIG);</td></tr>
+<tr><td class="ln">207</td><td class="code">    }</td></tr>
+<tr><td class="ln">208</td><td class="code"></td></tr>
+<tr><td class="ln">209</td><td class="code">    <span class="kw">public</span> SchoolTermConfigDto updateTermConfig(Long schoolId, SchoolTermConfigDto req,</td></tr>
+<tr><td class="ln">210</td><td class="code">                                                UserDetails principal) {</td></tr>
+<tr><td class="ln">211</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the authenticated headmaster has authority over the target school</span></td></tr>
+<tr><td class="ln">212</td><td class="code">        checkHeadmasterSchoolAccess(principal, schoolId);</td></tr>
+<tr><td class="ln">213</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or abort <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">214</td><td class="code">        School school = schoolRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">215</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">216</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve existing term configuration or initialize a <span class="kw">new</span> one with <span class="kw">default</span> academic dates</span></td></tr>
+<tr><td class="ln">217</td><td class="code">        SchoolTermConfig config = termConfigRepository.findById(schoolId).orElse(</td></tr>
+<tr><td class="ln">218</td><td class="code">                SchoolTermConfig.builder().id(schoolId).school(school)</td></tr>
+<tr><td class="ln">219</td><td class="code">                        .startDate(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">09</span>-<span <span class="kw">class</span>="num">15</span>&quot;</span>).term2Start(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">02</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>)</td></tr>
+<tr><td class="ln">220</td><td class="code">                        .elementaryEnd(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">06</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>).progymnasiumEnd(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">06</span>-<span <span class="kw">class</span>="num">15</span>&quot;</span>).gymnasiumEnd(<span <span class="kw">class</span>="str">&quot;<span <span class="kw">class</span>="num">07</span>-<span <span class="kw">class</span>="num">01</span>&quot;</span>)</td></tr>
+<tr><td class="ln">221</td><td class="code">                        .build());</td></tr>
+<tr><td class="ln">222</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the updated date ranges from the request DTO to the entity</span></td></tr>
+<tr><td class="ln">223</td><td class="code">        config.setStartDate(req.getStartDate());</td></tr>
+<tr><td class="ln">224</td><td class="code">        config.setTerm2Start(req.getTerm2Start());</td></tr>
+<tr><td class="ln">225</td><td class="code">        config.setElementaryEnd(req.getElementaryEnd());</td></tr>
+<tr><td class="ln">226</td><td class="code">        config.setProgymnasiumEnd(req.getProgymnasiumEnd());</td></tr>
+<tr><td class="ln">227</td><td class="code">        config.setGymnasiumEnd(req.getGymnasiumEnd());</td></tr>
+<tr><td class="ln">228</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the changes to the database</span></td></tr>
+<tr><td class="ln">229</td><td class="code">        termConfigRepository.save(config);</td></tr>
+<tr><td class="ln">230</td><td class="code">        <span class="kw">return</span> req;</td></tr>
+<tr><td class="ln">231</td><td class="code">    }</td></tr>
+<tr><td class="ln">232</td><td class="code"></td></tr>
+<tr><td class="ln">233</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Student Limit ─────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">234</td><td class="code"></td></tr>
+<tr><td class="ln">235</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> updateStudentLimit(Long schoolId, Integer limit, UserDetails principal) {</td></tr>
+<tr><td class="ln">236</td><td class="code">        <span <span class="kw">class</span>="cmt">// Verify the authenticated headmaster has authority over the target school</span></td></tr>
+<tr><td class="ln">237</td><td class="code">        checkHeadmasterSchoolAccess(principal, schoolId);</td></tr>
+<tr><td class="ln">238</td><td class="code">        <span <span class="kw">class</span>="cmt">// Load the managed School entity or abort <span class="kw">if</span> the ID is invalid</span></td></tr>
+<tr><td class="ln">239</td><td class="code">        School school = schoolRepository.findById(schoolId)</td></tr>
+<tr><td class="ln">240</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.NOT_FOUND, <span <span class="kw">class</span>="str">&quot;School not found&quot;</span>));</td></tr>
+<tr><td class="ln">241</td><td class="code">        <span <span class="kw">class</span>="cmt">// Update the student capacity constraint</span></td></tr>
+<tr><td class="ln">242</td><td class="code">        school.setStudentLimit(limit);</td></tr>
+<tr><td class="ln">243</td><td class="code">        <span <span class="kw">class</span>="cmt">// Persist the changes to the database</span></td></tr>
+<tr><td class="ln">244</td><td class="code">        schoolRepository.save(school);</td></tr>
+<tr><td class="ln">245</td><td class="code">    }</td></tr>
+<tr><td class="ln">246</td><td class="code"></td></tr>
+<tr><td class="ln">247</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Shared helpers ─────────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">248</td><td class="code"></td></tr>
+<tr><td class="ln">249</td><td class="code">    <span class="kw">public</span> <span class="kw">void</span> checkHeadmasterSchoolAccess(UserDetails principal, Long schoolId) {</td></tr>
+<tr><td class="ln">250</td><td class="code">        <span class="kw">boolean</span> isAdmin = principal.getAuthorities().stream()</td></tr>
+<tr><td class="ln">251</td><td class="code">                .anyMatch(a -&gt; a.getAuthority().equals(<span <span class="kw">class</span>="str">&quot;ROLE_ADMIN&quot;</span>));</td></tr>
+<tr><td class="ln">252</td><td class="code">        <span class="kw">if</span> (!isAdmin) {</td></tr>
+<tr><td class="ln">253</td><td class="code">            User headmaster = userRepository.findByEmail(principal.getUsername())</td></tr>
+<tr><td class="ln">254</td><td class="code">                    .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED));</td></tr>
+<tr><td class="ln">255</td><td class="code">            School headmasterSchool = schoolRepository.findByDirector_Id(headmaster.getId())</td></tr>
+<tr><td class="ln">256</td><td class="code">                    .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.FORBIDDEN,</td></tr>
+<tr><td class="ln">257</td><td class="code">                            <span <span class="kw">class</span>="str">&quot;No school assigned to <span class="kw">this</span> headmaster&quot;</span>));</td></tr>
+<tr><td class="ln">258</td><td class="code">            <span class="kw">if</span> (!headmasterSchool.getId().equals(schoolId)) {</td></tr>
+<tr><td class="ln">259</td><td class="code">                <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.FORBIDDEN,</td></tr>
+<tr><td class="ln">260</td><td class="code">                        <span <span class="kw">class</span>="str">&quot;Access denied to <span class="kw">this</span> school&#x27;s schedule&quot;</span>);</td></tr>
+<tr><td class="ln">261</td><td class="code">            }</td></tr>
+<tr><td class="ln">262</td><td class="code">        }</td></tr>
+<tr><td class="ln">263</td><td class="code">    }</td></tr>
+<tr><td class="ln">264</td><td class="code"></td></tr>
+<tr><td class="ln">265</td><td class="code">    <span class="kw">public</span> School resolveHeadmasterSchool(User headmaster) {</td></tr>
+<tr><td class="ln">266</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the school entity managed by the given headmaster</span></td></tr>
+<tr><td class="ln">267</td><td class="code">        <span class="kw">return</span> schoolRepository.findByDirector_Id(headmaster.getId())</td></tr>
+<tr><td class="ln">268</td><td class="code">                <span <span class="kw">class</span>="cmt">// Throw a <span <span class="kw">class</span>="num">400</span> error <span class="kw">if</span> the headmaster is not found as a director</span></td></tr>
+<tr><td class="ln">269</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST,</td></tr>
+<tr><td class="ln">270</td><td class="code">                        <span <span class="kw">class</span>="str">&quot;No school assigned to <span class="kw">this</span> headmaster&quot;</span>));</td></tr>
+<tr><td class="ln">271</td><td class="code">    }</td></tr>
+<tr><td class="ln">272</td><td class="code"></td></tr>
+<tr><td class="ln">273</td><td class="code">    <span <span class="kw">class</span>="cmt">// ── Private helpers ───────────────────────────────────────────────────────</span></td></tr>
+<tr><td class="ln">274</td><td class="code"></td></tr>
+<tr><td class="ln">275</td><td class="code">    <span class="kw">private</span> User resolveHeadmasterById(Long id) {</td></tr>
+<tr><td class="ln">276</td><td class="code">        <span <span class="kw">class</span>="cmt">// Retrieve the headmaster entity by ID or <span class="kw">throw</span> an error <span class="kw">if</span> not found</span></td></tr>
+<tr><td class="ln">277</td><td class="code">        <span class="kw">if</span> (id == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">null</span>;</td></tr>
+<tr><td class="ln">278</td><td class="code">        <span class="kw">return</span> userRepository.findById(id)</td></tr>
+<tr><td class="ln">279</td><td class="code">                .orElseThrow(() -&gt; <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST,</td></tr>
+<tr><td class="ln">280</td><td class="code">                        <span <span class="kw">class</span>="str">&quot;Headmaster user not found&quot;</span>));</td></tr>
+<tr><td class="ln">281</td><td class="code">    }</td></tr>
+<tr><td class="ln">282</td><td class="code"></td></tr>
+<tr><td class="ln">283</td><td class="code">    <span class="kw">private</span> SchoolType resolveType(String type) {</td></tr>
+<tr><td class="ln">284</td><td class="code">        <span <span class="kw">class</span>="cmt">// Convert the raw string input into a valid SchoolType <span class="kw">enum</span> constant</span></td></tr>
+<tr><td class="ln">285</td><td class="code">        <span class="kw">if</span> (type == <span class="kw">null</span> || type.isBlank()) <span class="kw">return</span> <span class="kw">null</span>;</td></tr>
+<tr><td class="ln">286</td><td class="code">        <span class="kw">try</span> {</td></tr>
+<tr><td class="ln">287</td><td class="code">            <span <span class="kw">class</span>="cmt">// Normalize input to uppercase to match <span class="kw">enum</span> constant naming convention</span></td></tr>
+<tr><td class="ln">288</td><td class="code">            <span class="kw">return</span> SchoolType.valueOf(type.toUpperCase());</td></tr>
+<tr><td class="ln">289</td><td class="code">        } <span class="kw">catch</span> (IllegalArgumentException e) {</td></tr>
+<tr><td class="ln">290</td><td class="code">            <span <span class="kw">class</span>="cmt">// Return a <span <span class="kw">class</span>="num">400</span> Bad Request <span class="kw">if</span> the provided string does not match any existing SchoolType</span></td></tr>
+<tr><td class="ln">291</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST, <span <span class="kw">class</span>="str">&quot;Invalid school type: &quot;</span> + type);</td></tr>
+<tr><td class="ln">292</td><td class="code">        }</td></tr>
+<tr><td class="ln">293</td><td class="code">    }</td></tr>
+<tr><td class="ln">294</td><td class="code"></td></tr>
+<tr><td class="ln">295</td><td class="code">    <span class="kw">private</span> ScheduleEntryType resolveEntryType(String type) {</td></tr>
+<tr><td class="ln">296</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map a raw string to the ScheduleEntryType <span class="kw">enum</span>, handling invalid inputs</span></td></tr>
+<tr><td class="ln">297</td><td class="code">        <span class="kw">try</span> {</td></tr>
+<tr><td class="ln">298</td><td class="code">            <span <span class="kw">class</span>="cmt">// Normalize input to uppercase to match <span class="kw">enum</span> constant naming</span></td></tr>
+<tr><td class="ln">299</td><td class="code">            <span class="kw">return</span> ScheduleEntryType.valueOf(type.toUpperCase());</td></tr>
+<tr><td class="ln">300</td><td class="code">        } <span class="kw">catch</span> (IllegalArgumentException e) {</td></tr>
+<tr><td class="ln">301</td><td class="code">            <span <span class="kw">class</span>="cmt">// Return a <span <span class="kw">class</span>="num">400</span> Bad Request <span class="kw">if</span> the provided string does not match any <span class="kw">enum</span> constant</span></td></tr>
+<tr><td class="ln">302</td><td class="code">            <span class="kw">throw</span> <span class="kw">new</span> ResponseStatusException(HttpStatus.BAD_REQUEST, <span <span class="kw">class</span>="str">&quot;Invalid entry type: &quot;</span> + type);</td></tr>
+<tr><td class="ln">303</td><td class="code">        }</td></tr>
+<tr><td class="ln">304</td><td class="code">    }</td></tr>
+<tr><td class="ln">305</td><td class="code"></td></tr>
+<tr><td class="ln">306</td><td class="code">    <span class="kw">private</span> LocalDate parseDate(String date) {</td></tr>
+<tr><td class="ln">307</td><td class="code">        <span <span class="kw">class</span>="cmt">// Safely parse an ISO-<span <span class="kw">class</span>="num">8601</span> date string, returning <span class="kw">null</span> <span class="kw">if</span> the input is empty or <span class="kw">null</span></span></td></tr>
+<tr><td class="ln">308</td><td class="code">        <span class="kw">return</span> (date != <span class="kw">null</span> &amp;&amp; !date.isBlank()) ? LocalDate.parse(date) : <span class="kw">null</span>;</td></tr>
+<tr><td class="ln">309</td><td class="code">    }</td></tr>
+<tr><td class="ln">310</td><td class="code"></td></tr>
+<tr><td class="ln">311</td><td class="code">    <span class="kw">private</span> SchoolDto toDto(School s) {</td></tr>
+<tr><td class="ln">312</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the School entity to a DTO <span class="kw">for</span> API responses</span></td></tr>
+<tr><td class="ln">313</td><td class="code">        <span <span class="kw">class</span>="cmt">// Construct the headmaster&#x27;s full name <span class="kw">if</span> the director is present</span></td></tr>
+<tr><td class="ln">314</td><td class="code">        String headmasterName = s.getDirector() != <span class="kw">null</span></td></tr>
+<tr><td class="ln">315</td><td class="code">                ? s.getDirector().getFirstName() + <span <span class="kw">class</span>="str">&quot; &quot;</span> + s.getDirector().getLastName()</td></tr>
+<tr><td class="ln">316</td><td class="code">                : <span class="kw">null</span>;</td></tr>
+<tr><td class="ln">317</td><td class="code">        <span <span class="kw">class</span>="cmt">// Convert the SchoolType <span class="kw">enum</span> to its string representation</span></td></tr>
+<tr><td class="ln">318</td><td class="code">        String type = s.getType() != <span class="kw">null</span> ? s.getType().name() : <span class="kw">null</span>;</td></tr>
+<tr><td class="ln">319</td><td class="code">        <span <span class="kw">class</span>="cmt">// Fetch and map all school profiles to their respective DTO shapes</span></td></tr>
+<tr><td class="ln">320</td><td class="code">        List&lt;SchoolDto.ProfileDto&gt; profiles = profileRepository.findAllBySchool_Id(s.getId()).stream()</td></tr>
+<tr><td class="ln">321</td><td class="code">                .map(p -&gt; <span class="kw">new</span> SchoolDto.ProfileDto(p.getId(), p.getName()))</td></tr>
+<tr><td class="ln">322</td><td class="code">                .toList();</td></tr>
+<tr><td class="ln">323</td><td class="code">        <span <span class="kw">class</span>="cmt">// Assemble the <span class="kw">final</span> SchoolDto with all mapped properties</span></td></tr>
+<tr><td class="ln">324</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> SchoolDto(s.getId(), s.getName(), s.getAddress(), type,</td></tr>
+<tr><td class="ln">325</td><td class="code">                headmasterName, profiles, s.getStudentLimit());</td></tr>
+<tr><td class="ln">326</td><td class="code">    }</td></tr>
+<tr><td class="ln">327</td><td class="code"></td></tr>
+<tr><td class="ln">328</td><td class="code">    <span class="kw">private</span> SchoolScheduleEntryDto toScheduleDto(SchoolScheduleEntry e) {</td></tr>
+<tr><td class="ln">329</td><td class="code">        <span <span class="kw">class</span>="cmt">// Map the schedule entry entity to its DTO representation <span class="kw">for</span> API responses</span></td></tr>
+<tr><td class="ln">330</td><td class="code">        <span class="kw">return</span> <span class="kw">new</span> SchoolScheduleEntryDto(</td></tr>
+<tr><td class="ln">331</td><td class="code">                e.getId(),</td></tr>
+<tr><td class="ln">332</td><td class="code">                e.getType().name(),</td></tr>
+<tr><td class="ln">333</td><td class="code">                e.getLabel(),</td></tr>
+<tr><td class="ln">334</td><td class="code">                e.getStartTime().toString(),</td></tr>
+<tr><td class="ln">335</td><td class="code">                e.getEndTime().toString(),</td></tr>
+<tr><td class="ln">336</td><td class="code">                <span <span class="kw">class</span>="cmt">// Handle potential <span class="kw">null</span> event date to avoid NullPointerException during string conversion</span></td></tr>
+<tr><td class="ln">337</td><td class="code">                e.getEventDate() != <span class="kw">null</span> ? e.getEventDate().toString() : <span class="kw">null</span>,</td></tr>
+<tr><td class="ln">338</td><td class="code">                e.getSortOrder()</td></tr>
+<tr><td class="ln">339</td><td class="code">        );</td></tr>
+<tr><td class="ln">340</td><td class="code">    }</td></tr>
+<tr><td class="ln">341</td><td class="code">}</td></tr>
+</tbody></table>
+</div>
+</body>
+</html>
