@@ -1,0 +1,369 @@
+===============================================================================
+ EduTrack / e-journal — API debugging cheat sheet (curl)
+===============================================================================
+Backend base URL : http://localhost:8080
+Auth model       : JWT Bearer access token (sent in `Authorization: Bearer ...`)
+                   + HttpOnly `refreshToken` cookie (set by /auth/login).
+Generated for    : Spring Boot backend in backend/e-journal
+
+-------------------------------------------------------------------------------
+ 0. QUICK SETUP
+-------------------------------------------------------------------------------
+# Set a base URL variable (reuse it in every command below):
+export BASE=http://localhost:8080
+
+# Demo users — ALL share the password:  password
+#   ADMIN       agenta007@edutrack.bg
+#   HEADMASTER  p.nikolov@school2.bg      (directs School 2)
+#   TEACHER     h.hristov@school2.bg      (teaches in School 2)
+#   STUDENT     a.angelov@students.bg
+#   PARENT      n.angelova@parents.bg
+
+-------------------------------------------------------------------------------
+ NOTE: LOCALHOST DEV BYPASS
+-------------------------------------------------------------------------------
+While `app.security.allow-localhost=true` (default in application.properties),
+ANY request from 127.0.0.1 / ::1 that carries NO `Authorization` header is
+auto-authenticated as a virtual admin with ALL roles (LocalhostAdminFilter).
+
+  => From this machine, a tokenless curl behaves like an admin:
+       curl -s $BASE/api/classes        # works, no token needed
+
+  => To test REAL role-based behaviour (403 / scoping), you MUST send a token
+     for a specific user (see section 1). The browser app always sends a token,
+     so it is subject to the real @PreAuthorize rules.
+
+Set allow-localhost=false to disable the bypass (staging/production).
+
+-------------------------------------------------------------------------------
+ 1. AUTH  (/auth/**  — public, no token required)
+-------------------------------------------------------------------------------
+# --- Login: returns {"accessToken":"..."} and sets the refreshToken cookie ---
+curl -s -X POST $BASE/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"h.hristov@school2.bg","password":"password"}'
+
+# --- Login and capture the token into $TOKEN (jq required) ---
+export TOKEN=$(curl -s -X POST $BASE/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"h.hristov@school2.bg","password":"password"}' | jq -r .accessToken)
+echo "$TOKEN"
+
+# --- Login WITHOUT jq (saves cookie jar too, for refresh/logout) ---
+curl -s -c cookies.txt -X POST $BASE/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"p.nikolov@school2.bg","password":"password"}'
+
+# Helper used in every authed example below:  -H "Authorization: Bearer $TOKEN"
+export AUTH="Authorization: Bearer $TOKEN"
+
+# --- Refresh: uses the HttpOnly refreshToken cookie, no body ---
+curl -s -b cookies.txt -X POST $BASE/auth/refresh
+
+# --- Logout: clears the refresh cookie ---
+curl -s -b cookies.txt -X POST $BASE/auth/logout
+
+# --- Quick role switch (re-login as a different demo user) ---
+relogin() { export TOKEN=$(curl -s -X POST $BASE/auth/login -H 'Content-Type: application/json' \
+  -d "{\"email\":\"$1\",\"password\":\"password\"}" | jq -r .accessToken); export AUTH="Authorization: Bearer $TOKEN"; echo "now: $1"; }
+# usage: relogin agenta007@edutrack.bg
+
+-------------------------------------------------------------------------------
+ 2. CLASSES  (/api/classes)
+-------------------------------------------------------------------------------
+# List classes — ADMIN: all; HEADMASTER: own school; TEACHER: assigned school
+curl -s -H "$AUTH" $BASE/api/classes
+
+# Classes at a school (ADMIN, HEADMASTER)
+curl -s -H "$AUTH" $BASE/api/classes/school/2
+
+# One class by id (ADMIN, HEADMASTER, TEACHER, PARENT, STUDENT)
+curl -s -H "$AUTH" $BASE/api/classes/1
+
+# Students in a class (ADMIN, HEADMASTER, TEACHER)
+curl -s -H "$AUTH" $BASE/api/classes/1/students
+
+-------------------------------------------------------------------------------
+ 3. GRADES  (/api/grades)   Bulgarian scale 2..6 (2,2.5,...,6)
+-------------------------------------------------------------------------------
+# All grades for a class (ADMIN, HEADMASTER, TEACHER)
+curl -s -H "$AUTH" $BASE/api/grades/class/1
+
+# My grades (STUDENT only)
+curl -s -H "$AUTH" $BASE/api/grades/student/me
+
+# Grades for one student (PARENT, ADMIN, HEADMASTER, TEACHER)
+curl -s -H "$AUTH" $BASE/api/grades/student/13
+
+# Add a grade (TEACHER, ADMIN, HEADMASTER) -> 201
+curl -s -X POST $BASE/api/grades -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"studentId":13,"scheduleId":1,"value":5.5}'
+
+# Delete a grade (TEACHER, ADMIN, HEADMASTER) -> 204
+curl -s -X DELETE $BASE/api/grades/1 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 4. ABSENCES  (/api/absences)
+-------------------------------------------------------------------------------
+# By class (ADMIN, HEADMASTER, TEACHER)
+curl -s -H "$AUTH" $BASE/api/absences/class/1
+
+# My absences (STUDENT)
+curl -s -H "$AUTH" $BASE/api/absences/student/me
+
+# By student (PARENT, ADMIN, HEADMASTER, TEACHER)
+curl -s -H "$AUTH" $BASE/api/absences/student/13
+
+# Record an absence (TEACHER, ADMIN, HEADMASTER)
+curl -s -X POST $BASE/api/absences -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"studentId":13,"scheduleId":1,"date":"2026-06-22"}'
+
+# Mark an absence excused (TEACHER, ADMIN, HEADMASTER)
+curl -s -X PUT $BASE/api/absences/1/excuse -H "$AUTH"
+
+# Delete an absence (TEACHER, ADMIN, HEADMASTER)
+curl -s -X DELETE $BASE/api/absences/1 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 5. COMPLAINTS / REMARKS  (/api/complaints)
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/complaints/class/1            # ADMIN,HEADMASTER,TEACHER
+curl -s -H "$AUTH" $BASE/api/complaints/student/me         # STUDENT
+curl -s -H "$AUTH" $BASE/api/complaints/student/13         # PARENT,ADMIN,HEADMASTER,TEACHER
+
+# Create (TEACHER, ADMIN, HEADMASTER)
+curl -s -X POST $BASE/api/complaints -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"studentId":13,"scheduleId":1,"date":"2026-06-22","description":"Talking in class"}'
+
+# Delete (TEACHER, ADMIN, HEADMASTER)
+curl -s -X DELETE $BASE/api/complaints/1 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 6. SCHEDULES  (/api/schedules)
+-------------------------------------------------------------------------------
+# By class (all roles)
+curl -s -H "$AUTH" $BASE/api/schedules/class/1
+
+# By teacher id (ADMIN, HEADMASTER)
+curl -s -H "$AUTH" $BASE/api/schedules/teacher/8
+
+# My schedule (TEACHER)
+curl -s -H "$AUTH" $BASE/api/schedules/teacher/me
+
+# Create entry (ADMIN, HEADMASTER)
+curl -s -X POST $BASE/api/schedules -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"classId":1,"subjectId":1,"teacherId":8,"term":1,"dayOfWeek":1,
+       "startTime":"08:00","endTime":"08:45","lectureType":"LECTURE","trackAttendance":true}'
+
+# Change lecture type (ADMIN, HEADMASTER)
+curl -s -X PATCH $BASE/api/schedules/1/type -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"lectureType":"EXAM"}'
+
+# Delete entry (ADMIN, HEADMASTER)
+curl -s -X DELETE $BASE/api/schedules/1 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 7. SCHOOL EVENTS  (/api/events)
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/events/student/me            # STUDENT, PARENT
+curl -s -H "$AUTH" $BASE/api/events/class/1               # ADMIN,HEADMASTER,TEACHER
+curl -s -H "$AUTH" $BASE/api/events/school/2              # ADMIN,HEADMASTER
+
+# Create (TEACHER, ADMIN, HEADMASTER)
+curl -s -X POST $BASE/api/events -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"title":"Excursion","description":"Museum trip","date":"2026-06-30",
+       "type":"TRIP","schoolId":2,"classId":1}'
+
+# Delete (TEACHER, ADMIN, HEADMASTER)
+curl -s -X DELETE $BASE/api/events/1 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 8. SCHOOLS  (/api/schools)
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/schools                       # ADMIN
+curl -s -H "$AUTH" $BASE/api/schools/2                     # ADMIN,HEADMASTER,TEACHER
+
+# Create (ADMIN)
+curl -s -X POST $BASE/api/schools -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"New School","address":"123 St","type":"PRIMARY"}'
+
+# Update (ADMIN)
+curl -s -X PUT $BASE/api/schools/2 -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Renamed","address":"456 Ave","type":"SECONDARY"}'
+
+# Patch info (ADMIN, HEADMASTER)
+curl -s -X PATCH $BASE/api/schools/2/info -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"address":"New address"}'
+
+# Delete (ADMIN)
+curl -s -X DELETE $BASE/api/schools/2 -H "$AUTH"
+
+# Student limit (ADMIN, HEADMASTER)
+curl -s -X PUT $BASE/api/schools/2/student-limit -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"limit":500}'
+
+# --- School "profiles" (academic tracks / специалности) ---
+curl -s -H "$AUTH" $BASE/api/schools/2/profiles            # ADMIN,HEADMASTER,TEACHER
+curl -s -X POST $BASE/api/schools/2/profiles -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Mathematics"}'                              # ADMIN
+curl -s -X DELETE $BASE/api/schools/profiles/1 -H "$AUTH"  # ADMIN
+
+# --- School-wide schedule (bell schedule / events) ---
+curl -s -H "$AUTH" $BASE/api/schools/2/schedule            # ADMIN,HEADMASTER,TEACHER
+curl -s -X POST $BASE/api/schools/2/schedule -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"type":"PERIOD","label":"1st period","startTime":"08:00","endTime":"08:45","sortOrder":1}'
+curl -s -X PUT $BASE/api/schools/schedule/1 -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"type":"PERIOD","label":"1st period","startTime":"08:05","endTime":"08:50","sortOrder":1}'
+curl -s -X DELETE $BASE/api/schools/schedule/1 -H "$AUTH"
+
+# --- Term config ---
+curl -s -H "$AUTH" $BASE/api/schools/2/term-config         # ADMIN,HEADMASTER,TEACHER
+curl -s -X PUT $BASE/api/schools/2/term-config -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{}'                                                  # ADMIN,HEADMASTER (shape: see TermConfig DTO)
+
+-------------------------------------------------------------------------------
+ 9. SUBJECTS  (/api/subjects)
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/subjects                              # ADMIN,HEADMASTER
+curl -s -X POST $BASE/api/subjects -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Astronomy"}'                                        # ADMIN
+curl -s -X PUT $BASE/api/subjects/1 -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"name":"Physics"}'                                          # ADMIN
+curl -s -X DELETE $BASE/api/subjects/1 -H "$AUTH"                  # ADMIN
+
+-------------------------------------------------------------------------------
+ 10. TEACHERS  (/api/teachers)   — managed by HEADMASTER
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/teachers/school/2                     # ADMIN,HEADMASTER
+curl -s -H "$AUTH" $BASE/api/teachers/available                    # HEADMASTER (unassigned)
+
+# Create a new user AND hire as teacher (HEADMASTER)
+curl -s -X POST $BASE/api/teachers/create-and-hire -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"Ivan","lastName":"Petrov","email":"i.petrov@school2.bg","password":"password","role":"TEACHER"}'
+
+# Hire an existing user as teacher (HEADMASTER)
+curl -s -X POST $BASE/api/teachers/9/hire -H "$AUTH"
+
+# Fire (HEADMASTER)
+curl -s -X DELETE $BASE/api/teachers/9/fire -H "$AUTH"
+
+# Set salary (HEADMASTER)
+curl -s -X PUT $BASE/api/teachers/8/salary -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"salary":2500.00}'
+
+# Set qualifications = subject ids (HEADMASTER)
+curl -s -X PUT $BASE/api/teachers/8/qualifications -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"subjectIds":[1,2,7]}'
+
+-------------------------------------------------------------------------------
+ 11. STUDENTS  (/api/students)   — managed by HEADMASTER
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/students/available                    # HEADMASTER
+curl -s -H "$AUTH" $BASE/api/students/capacity                     # HEADMASTER
+curl -s -H "$AUTH" $BASE/api/students/limit                        # HEADMASTER,ADMIN
+
+# Create user + enroll into a class (HEADMASTER)
+curl -s -X POST $BASE/api/students/create-and-enroll -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"Anna","lastName":"Ivanova","email":"a.ivanova@students.bg","password":"password","role":"STUDENT","classId":1}'
+
+# Enroll existing user into a class (HEADMASTER) — class via query param
+curl -s -X POST "$BASE/api/students/20/enroll?classId=1" -H "$AUTH"
+
+# Expel (HEADMASTER)
+curl -s -X DELETE $BASE/api/students/20/expel -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 12. PARENTS  (/api/parents)   — managed by HEADMASTER
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/parents/school/2                      # ADMIN,HEADMASTER
+curl -s -H "$AUTH" $BASE/api/parents/available                     # HEADMASTER
+
+# Create parent (HEADMASTER)
+curl -s -X POST $BASE/api/parents -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"Maria","lastName":"Ivanova","email":"m.ivanova@parents.bg","password":"password","role":"PARENT"}'
+
+# Link / unlink parent <-> student (HEADMASTER)
+curl -s -X POST   $BASE/api/parents/30/link/13   -H "$AUTH"
+curl -s -X DELETE $BASE/api/parents/30/unlink/13 -H "$AUTH"
+
+# Update parent (HEADMASTER)
+curl -s -X PUT $BASE/api/parents/30 -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"Maria","lastName":"Petrova","email":"m.petrova@parents.bg","role":"PARENT"}'
+
+-------------------------------------------------------------------------------
+ 13. USERS  (/api/users)   — mostly ADMIN
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/users                                 # ADMIN
+curl -s -H "$AUTH" $BASE/api/users/teachers/school/2               # ADMIN,HEADMASTER
+curl -s -H "$AUTH" $BASE/api/users/students/school/2              # ADMIN,HEADMASTER
+curl -s -H "$AUTH" $BASE/api/users/parents/school/2               # ADMIN,HEADMASTER
+curl -s -H "$AUTH" $BASE/api/users/headmasters                     # ADMIN
+
+# Profile picture (public-ish; returns image bytes or 404)
+curl -s -o pic.jpg $BASE/api/users/8/picture
+
+# Create user (ADMIN)
+curl -s -X POST $BASE/api/users -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"New","lastName":"User","email":"new.user@edutrack.bg","password":"password","role":"TEACHER"}'
+
+# Update user (ADMIN)
+curl -s -X PUT $BASE/api/users/8 -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"firstName":"Hristo","lastName":"Hristov","email":"h.hristov@school2.bg","role":"TEACHER"}'
+
+# Delete user (ADMIN)
+curl -s -X DELETE $BASE/api/users/8 -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 14. PROFILE  (/api/profile)   — the authenticated user, any role
+-------------------------------------------------------------------------------
+curl -s -H "$AUTH" $BASE/api/profile
+
+# Change password
+curl -s -X PUT $BASE/api/profile/password -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"currentPassword":"password","newPassword":"newpass123"}'
+
+# Update bio
+curl -s -X PUT $BASE/api/profile/bio -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"bio":"Mathematics teacher since 2010."}'
+
+# Upload profile picture (multipart)
+curl -s -X PUT $BASE/api/profile/picture -H "$AUTH" -F 'file=@/path/to/photo.jpg'
+
+# Delete profile picture
+curl -s -X DELETE $BASE/api/profile/picture -H "$AUTH"
+
+-------------------------------------------------------------------------------
+ 15. SWAGGER / OPENAPI (public)
+-------------------------------------------------------------------------------
+# Interactive UI:
+#   http://localhost:8080/swagger-ui.html
+# Raw OpenAPI spec (great for listing every endpoint + exact schemas):
+curl -s $BASE/v3/api-docs | jq .
+
+-------------------------------------------------------------------------------
+ 16. DEBUGGING TIPS
+-------------------------------------------------------------------------------
+# Show only the HTTP status code:
+curl -s -o /dev/null -w "%{http_code}\n" -H "$AUTH" $BASE/api/classes
+
+# Show response headers + body:
+curl -s -i -H "$AUTH" $BASE/api/classes
+
+# Verbose (TLS, request/response headers):
+curl -sv -H "$AUTH" $BASE/api/classes
+
+# Pretty-print JSON:
+curl -s -H "$AUTH" $BASE/api/classes | jq .
+
+# Interpreting status codes here:
+#   200/201/204  OK
+#   400          bad request / validation / unhandled role in service logic
+#   401          missing/expired token (or refresh cookie gone)
+#   403          authenticated but role not permitted by @PreAuthorize
+#   404          entity not found
+#   500          server exception — check backend/e-journal/logs/e-journal.log
+
+# Tail backend logs while testing:
+#   tail -f backend/e-journal/logs/e-journal.log         # app + stack traces
+#   tail -f backend/e-journal/logs/requests.log          # one line per request
+===============================================================================

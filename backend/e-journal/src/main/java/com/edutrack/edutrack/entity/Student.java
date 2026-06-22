@@ -1,7 +1,7 @@
 package com.edutrack.e_journal.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+        import lombok.*;
 
 /**
  * A Student is a User with role STUDENT, extended with school and class assignment.
